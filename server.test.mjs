@@ -1,45 +1,93 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import {server} from './server.mjs';
-import {speciesOf} from './public/species.js';
-test('two clients share a game, keep hands private, reject stale and unauthorized moves, reconnect',async()=>{
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}/api/`;
- async function api(path,data,token){const res=await fetch(base+path,{method:data?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(data?{body:JSON.stringify(data)}:{})});return {status:res.status,data:await res.json()};}
- try{
- const a=(await api('login',{name:'Alice'})).data,b=(await api('login',{name:'Bob'})).data;
- let room=(await api('join',{create:true},a.token)).data;room=(await api('join',{code:room.code},b.token)).data;
- assert.equal((await api('start',{version:room.version},b.token)).status,400);
- room=(await api('start',{version:room.version},a.token)).data;
- const bv=(await api('state',null,b.token)).data;
- assert.equal(room.game.players[1].hand,undefined);assert.equal(bv.game.players[0].hand,undefined);assert.equal(bv.game.players[1].hand.length,8);
- const turn=room.game.turn, t=turn===0?a:b, own=turn===0?room:bv;
- const action={type:'lay',bird:speciesOf(own.game.players[turn].hand[0]),row:0,side:'left'};
- assert.equal((await api('move',{version:room.version,action},turn===0?b.token:a.token)).status,400);
- assert.equal((await api('move',{version:room.version,action},t.token)).status,200);
- assert.equal((await api('move',{version:room.version,action},t.token)).status,409);
- assert.equal((await api('state',null,a.token)).status,200);
- assert.equal((await api('state')).status,400);
- const beforeLeave=(await api('state',null,a.token)).data;
- const savedHand=beforeLeave.game.players.find(p=>p.id===a.id).hand;
- const left=await api('leave',{version:beforeLeave.version},a.token);
- assert.equal(left.status,200);assert.equal(left.data.saved,true);
- assert.equal((await api('state',null,a.token)).status,400);
- assert.equal((await api('me',null,a.token)).data.id,a.id);
- const other=(await api('join',{create:true},a.token)).data;
- assert.notEqual(other.code,beforeLeave.code);
- assert.equal((await api('join',{code:beforeLeave.code},a.token)).status,400);
- await api('leave',{version:other.version},a.token);
- const returned=(await api('join',{code:beforeLeave.code.toLowerCase()},a.token)).data;
- assert.deepEqual(returned.game.players.find(p=>p.id===a.id).hand,savedHand);
- assert.equal(returned.players.find(p=>p.id===a.id).away,false);
- assert.equal((await api('reset-rooms',{})).status,403);
- assert.equal((await api('reset-rooms',{password:'wrong'})).status,403);
- assert.equal((await api('state',null,b.token)).status,200);
- const reset=await api('reset-rooms',{password:'deletor'});
- assert.equal(reset.status,200);assert.ok(reset.data.deleted>=2);
- assert.equal((await api('state',null,b.token)).status,400);
- assert.equal((await api('join',{code:beforeLeave.code},a.token)).status,400);
- assert.equal((await api('join',{code:other.code},a.token)).status,400);
- assert.equal((await api('join',{create:true},a.token)).status,200);
- }finally{await new Promise(resolve=>server.close(resolve));}
+import test from "node:test";
+import assert from "node:assert/strict";
+import { server } from "./server.mjs";
+import { speciesOf } from "./public/species.js";
+
+let base;
+test.before(() => new Promise((resolve) => server.listen(0, "127.0.0.1", () => {
+  base = `http://127.0.0.1:${server.address().port}/api/`;
+  resolve();
+})));
+test.after(() => new Promise((resolve) => {
+  server.closeAllConnections();
+  server.close(resolve);
+}));
+async function api(path, data, token) {
+  const res = await fetch(base + path, {
+    method: data ? "POST" : "GET",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    ...(data ? { body: JSON.stringify(data) } : {}),
+  });
+  return { status: res.status, data: await res.json() };
+}
+const login = async (name) => (await api("login", { name })).data;
+async function table(...names) {
+  const people = [];
+  for (const name of names) people.push(await login(name));
+  let room = (await api("join", { create: true }, people[0].token)).data;
+  for (const p of people.slice(1)) room = (await api("join", { code: room.code }, p.token)).data;
+  return { people, room };
+}
+
+test("two clients share a game, keep hands private, reject stale and unauthorized moves, reconnect", async () => {
+  const { people: [a, b], room: lobby } = await table("Alice", "Bob");
+  assert.equal((await api("start", { version: lobby.version }, b.token)).status, 400);
+  const room = (await api("start", { version: lobby.version }, a.token)).data;
+  const bv = (await api("state", null, b.token)).data;
+  assert.equal(room.game.players[1].hand, undefined);
+  assert.equal(bv.game.players[0].hand, undefined);
+  assert.equal(bv.game.players[1].hand.length, 8);
+  const turn = room.game.turn,
+    t = turn === 0 ? a : b,
+    own = turn === 0 ? room : bv;
+  const action = { type: "lay", bird: speciesOf(own.game.players[turn].hand[0]), row: 0, side: "left" };
+  assert.equal((await api("move", { version: room.version, action }, turn === 0 ? b.token : a.token)).status, 400);
+  assert.equal((await api("move", { version: room.version, action }, t.token)).status, 200);
+  assert.equal((await api("move", { version: room.version, action }, t.token)).status, 409);
+  assert.equal((await api("state", null, a.token)).status, 200);
+  assert.equal((await api("state")).status, 400);
+
+  // Leaving mid-game keeps the seat, and blocks sitting at another table (#17).
+  const beforeLeave = (await api("state", null, a.token)).data;
+  const savedHand = beforeLeave.game.players.find((p) => p.id === a.id).hand;
+  const left = await api("leave", { version: beforeLeave.version }, a.token);
+  assert.equal(left.status, 200);
+  assert.equal(left.data.saved, true);
+  assert.equal((await api("state", null, a.token)).status, 400);
+  assert.equal((await api("me", null, a.token)).data.id, a.id);
+  const elsewhere = await api("join", { create: true }, a.token);
+  assert.equal(elsewhere.status, 400);
+  assert.match(elsewhere.data.error, new RegExp(`unfinished game at table ${beforeLeave.code}`));
+  const returned = (await api("join", { code: beforeLeave.code.toLowerCase() }, a.token)).data;
+  assert.deepEqual(returned.game.players.find((p) => p.id === a.id).hand, savedHand);
+  assert.equal(returned.players.find((p) => p.id === a.id).away, undefined);
+
+  assert.equal((await api("reset-rooms", {})).status, 403);
+  assert.equal((await api("reset-rooms", { password: "wrong" })).status, 403);
+  assert.equal((await api("state", null, b.token)).status, 200);
+  const reset = await api("reset-rooms", { password: "deletor" });
+  assert.equal(reset.status, 200);
+  assert.ok(reset.data.deleted >= 1);
+  assert.equal((await api("state", null, b.token)).status, 400);
+  assert.equal((await api("join", { code: beforeLeave.code }, a.token)).status, 400);
+  assert.equal((await api("join", { create: true }, a.token)).status, 200);
+});
+
+test("the last player out of a lobby closes it (#14)", async () => {
+  const { people: [c], room } = await table("Cleo");
+  const left = await api("leave", { version: room.version }, c.token);
+  assert.equal(left.data.saved, false);
+  const again = await api("join", { code: room.code }, c.token);
+  assert.equal(again.status, 400);
+  assert.match(again.data.error, /Table not found/);
+  assert.equal((await api("join", { create: true }, c.token)).status, 200);
+});
+
+test("when the host steps away mid-game, a present player becomes host", async () => {
+  const { people: [d, e], room: lobby } = await table("Dana", "Eli");
+  const room = (await api("start", { version: lobby.version }, d.token)).data;
+  await api("leave", { version: room.version }, d.token);
+  const seen = (await api("state", null, e.token)).data;
+  assert.equal(seen.host, e.id);
+  assert.equal(seen.players.find((p) => p.id === d.id).away, true);
 });

@@ -57,6 +57,14 @@ Refill convention: the server automatically adds cards on the right until a seco
 
 ## Room controls and flock hints
 
-Use Leave room in the header at any time, then enter a generated room code on the entry screen. Leaving an active game marks your seat away and preserves your hand; return from the same browser tab/session (or Discord identity) using the code. The table waits if an away player's turn comes up. New players can join a lobby; an already-started game accepts its existing players returning to their seats. Leaving a lobby removes your seat and transfers hosting to the next player.
+Use Leave room in the header at any time, then enter a generated room code on the entry screen. The room rules live in `rooms.mjs`:
+
+- Leaving a running game marks your seat away and keeps your hand. Return from the same browser tab or Discord identity using the code. The table waits if an away player's turn comes up.
+- While you hold an away seat in a running game, you can't create or join another table. The error names the table to return to.
+- New players can join a lobby, or a table whose game has ended, up to five seats. A running game only accepts its own players returning.
+- Leaving a lobby or a finished table gives up your seat. A finished game stays on screen for everyone else until the host starts a rematch.
+- A rematch deals in everyone present, including newcomers, and releases the seats of players who left.
+- The host is always a present player. When the host leaves or steps away, the next present player takes over.
+- The last player to leave a lobby or a finished table closes it, and its code stops working.
 
 The top card in each hand stack highlights the best achievable flock threshold with a light-green square: the small threshold when the small flock is available, or the big threshold when the big flock is available. This indicates hand size, while turn rules still determine when a flock may be completed.

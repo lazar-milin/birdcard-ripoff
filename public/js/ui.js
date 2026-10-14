@@ -210,8 +210,8 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     <${Wires} game=${game} mine=${mine} count=${count} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} />
     <div class="hand-heading">
       <div>
-        <p class="eyebrow">ONLY YOU CAN SEE THESE</p>
-        <h2>Your hand <small>(${hand.length})</small></h2>
+        <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
+        <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
       </div>
       ${!over &&
       html`<section class="turn" aria-live="polite">
@@ -228,7 +228,9 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     </div>
     <section class="hand">
       ${actions.length > 0 && html`<div class="actions">${actions}</div>`}
-      <${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />
+      ${me
+        ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
+        : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
     </section>
     <${VictoryDialog} room=${room} ctx=${ctx} open=${over && showResults} onClose=${() => setShowResults(false)} act=${act} />
   `;
