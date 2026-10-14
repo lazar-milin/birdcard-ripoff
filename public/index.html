@@ -1,4 +1,52 @@
-<!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>BirdCard Rip-off</title><link rel="stylesheet" href="/style.css"></head>
-<body><div class="sky" aria-hidden="true"><i class="pixel-cloud c1"></i><i class="pixel-cloud c2"></i><i class="pixel-cloud c3"></i><i class="pixel-cloud c4"></i><i class="pixel-cloud c5"></i><i class="pixel-cloud c6"></i></div><header><b class="brand">BirdCard Rip-off</b><div class="header-controls"><button id="copy" hidden></button><button id="leave-room" hidden aria-label="Leave room" title="Leave room"><svg class="leave-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 3h11v18H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 3l7 3v15l-7-3z" fill="currentColor"/><path d="M14 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="miter"/><path d="M8 11h1v2H8z" fill="#f7fcff"/></svg></button><button id="help" aria-label="How to play"><span class="help-icon" aria-hidden="true">?</span><span class="help-label">How to play</span></button></div></header><main id="app"><p>Connecting…</p></main><div id="notice" role="status" aria-live="polite"></div>
-<dialog id="rules"><h2>A little field guide</h2><p>Collect <strong>7 different species</strong>, or <strong>3 birds in each of 2 species</strong>, to win.</p><ol><li>Select a species in your hand. Place <strong>all</strong> of those cards at either end of one row.</li><li>Take the cards between your birds and the nearest matching bird. If the row becomes one species, it automatically refills on the right until a second species appears.</li><li>If you captured nothing, you may draw two cards.</li><li>Optionally complete one flock. The two numbers on each card are the thresholds to keep one or two birds. The rest of that species is discarded.</li></ol><p>An empty hand ends the round after resolving the draw choice. Everyone gets eight new cards, and that player starts again. If a full redeal is impossible, the largest collection wins; ties share victory.</p><p>Temporary cards for testing. Game mechanics based on CuBirds by Stefan Alexander. No official artwork included.</p><form method="dialog"><button>Back to the table</button></form></dialog><dialog id="reset-dialog"><form id="reset-form"><h2>Delete all rooms</h2><p>Enter the password to clear every room on this server.</p><label>Password<input id="reset-password" type="password" required autocomplete="off"></label><p id="reset-error" role="alert"></p><div class="actions"><button id="reset-cancel" type="button">Cancel</button><button id="reset-submit" type="submit">Delete all rooms</button></div></form></dialog><script type="module" src="/app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BirdCard Rip-off</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true">
+      <i class="pixel-cloud c1"></i><i class="pixel-cloud c2"></i
+      ><i class="pixel-cloud c3"></i><i class="pixel-cloud c4"></i
+      ><i class="pixel-cloud c5"></i><i class="pixel-cloud c6"></i>
+    </div>
+    <div id="root"></div>
+    <dialog id="rules">
+      <h2>A little field guide</h2>
+      <p>
+        Collect <strong>7 different species</strong>, or
+        <strong>3 birds in each of 2 species</strong>, to win.
+      </p>
+      <ol>
+        <li>
+          Select a species in your hand. Place <strong>all</strong> of those
+          cards at either end of one row.
+        </li>
+        <li>
+          Take the cards between your birds and the nearest matching bird. If
+          the row becomes one species, it automatically refills on the right
+          until a second species appears.
+        </li>
+        <li>If you captured nothing, you may draw two cards.</li>
+        <li>
+          Optionally complete one flock. The two numbers on each card are the
+          thresholds to keep one or two birds. The rest of that species is
+          discarded.
+        </li>
+      </ol>
+      <p>
+        An empty hand ends the round after resolving the draw choice. Everyone
+        gets eight new cards, and that player starts again. If a full redeal is
+        impossible, the largest collection wins; ties share victory.
+      </p>
+      <p>
+        Temporary cards for testing. Game mechanics based on CuBirds by Stefan
+        Alexander. No official artwork included.
+      </p>
+      <form method="dialog"><button>Back to the table</button></form>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

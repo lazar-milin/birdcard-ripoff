@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {server} from './server.mjs';
+import {speciesOf} from './public/species.js';
 test('two clients share a game, keep hands private, reject stale and unauthorized moves, reconnect',async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}/api/`;
  async function api(path,data,token){const res=await fetch(base+path,{method:data?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(data?{body:JSON.stringify(data)}:{})});return {status:res.status,data:await res.json()};}
@@ -12,7 +13,7 @@ test('two clients share a game, keep hands private, reject stale and unauthorize
  const bv=(await api('state',null,b.token)).data;
  assert.equal(room.game.players[1].hand,undefined);assert.equal(bv.game.players[0].hand,undefined);assert.equal(bv.game.players[1].hand.length,8);
  const turn=room.game.turn, t=turn===0?a:b, own=turn===0?room:bv;
- const action={type:'lay',bird:own.game.players[turn].hand[0],row:0,side:'left'};
+ const action={type:'lay',bird:speciesOf(own.game.players[turn].hand[0]),row:0,side:'left'};
  assert.equal((await api('move',{version:room.version,action},turn===0?b.token:a.token)).status,400);
  assert.equal((await api('move',{version:room.version,action},t.token)).status,200);
  assert.equal((await api('move',{version:room.version,action},t.token)).status,409);
