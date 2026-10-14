@@ -73,3 +73,8 @@ export const SPECIES = [
     image: "/art/robin.png",
   },
 ];
+
+export const SPECIES_BY_ID = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
+
+// Card ids are the species id, a dash, and a copy number, for example "duck-3".
+export const speciesOf = (card) => card.slice(0, card.lastIndexOf("-"));
