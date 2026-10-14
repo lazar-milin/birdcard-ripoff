@@ -1,0 +1,9 @@
+{
+  "name": "bird-table-activity",
+  "private": true,
+  "type": "module",
+  "scripts": {"start": "node --env-file-if-exists=.env server.mjs", "test": "node --test", "build": "node build.mjs"},
+  "dependencies": {"@discord/embedded-app-sdk": "2.4.0"},
+  "devDependencies": {"esbuild": "0.25.12"},
+  "engines": {"node": ">=22"}
+}
