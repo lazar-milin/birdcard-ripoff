@@ -51,7 +51,6 @@ export function play(prev, next) {
     ng = next?.game;
   if (!pg || !ng || pg.id !== ng.id || prev.code !== next.code) return;
   const events = changedEvents(prev, next);
-  const events = ng.events.filter((e) => e.seq > pg.seq);
   // Nothing new, or too much missed to animate faithfully.
   if (!events.length || events[0].seq !== pg.seq + 1) return;
 
