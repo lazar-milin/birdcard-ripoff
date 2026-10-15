@@ -27,7 +27,7 @@ The Discord adapter is bundled, but a live Discord launch requires your applicat
 
 ## Artwork handoff
 
-- Edit `public/species.js` for each species' label, temporary color, and image URL.
+- Edit `public/species.js` for each species' label, short tag (shown on cards squeezed into a long wire), temporary color, and image URL.
 - Put your eight images under `public/art/` and use paths such as `/art/owl.webp`.
 - Card art sits in a flexible central frame. Transparent square images are a useful starting format; the current renderer uses `object-fit: contain`.
 - `public/style.css` controls the table, card frames, typography, spacing, and selection state independently of the rules engine.

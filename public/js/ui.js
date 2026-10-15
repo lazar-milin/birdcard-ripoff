@@ -13,7 +13,7 @@ export function Segments({ parts }) {
 
 export function Card({ card, n = 0, fresh = false, preview = false }) {
   const s = SPECIES_BY_ID[speciesOf(card)];
-  return html`<div class=${`card${fresh ? " fresh" : ""}${preview ? " capture-preview" : ""}`} data-card=${card} style=${"--bird:" + s.color}>
+  return html`<div class=${`card${fresh ? " fresh" : ""}${preview ? " capture-preview" : ""}`} data-card=${card} data-short=${s.short} style=${"--bird:" + s.color}>
     <div class="card-top">
       <span class="breakpoints" aria-label=${`Small flock ${s.small}, big flock ${s.big}`}>
         <span class=${n >= s.small && n < s.big ? "flock-ready" : ""}>${s.small}</span>
@@ -122,9 +122,66 @@ export function Scoreboard({ room }) {
   </div>`;
 }
 
+// Squeezes a long wire to fit its row instead of scrolling (#13). Both end cards stay
+// whole; each card between them shows a strip with its flock numbers and short name.
+// If strips of MIN_STRIP don't fit, the whole wire is scaled down to at most MIN_ZOOM,
+// then the strips narrow to LAST_STRIP; only beyond that does the wire scroll.
+// Clears everything when the wire fits as is.
+const MIN_STRIP = 26,
+  LAST_STRIP = 20,
+  MIN_ZOOM = 0.7;
+function fitWire(row) {
+  const wire = row.querySelector(".row-cards");
+  const cards = wire.children;
+  delete wire.dataset.fit;
+  wire.style.removeProperty("zoom");
+  const n = cards.length;
+  if (n < 3) return;
+  const rs = getComputedStyle(row),
+    ws = getComputedStyle(wire);
+  const gap = parseFloat(ws.columnGap) || 0;
+  const buttons = [...row.querySelectorAll(":scope > button")];
+  const room =
+    row.clientWidth -
+    parseFloat(rs.paddingLeft) -
+    parseFloat(rs.paddingRight) -
+    buttons.reduce((sum, b) => sum + b.offsetWidth, 0) -
+    buttons.length * (parseFloat(rs.columnGap) || 0) -
+    parseFloat(ws.paddingLeft) -
+    parseFloat(ws.paddingRight);
+  const width = cards[0].offsetWidth;
+  if (n * width + (n - 1) * gap <= room) return;
+  let strip = Math.floor((room - 2 * width - gap) / (n - 2)),
+    zoom = 1;
+  if (strip < MIN_STRIP) {
+    strip = MIN_STRIP;
+    zoom = room / (2 * width + gap + (n - 2) * MIN_STRIP);
+    if (zoom < MIN_ZOOM) {
+      zoom = MIN_ZOOM;
+      strip = Math.max(LAST_STRIP, Math.floor((room / MIN_ZOOM - 2 * width - gap) / (n - 2)));
+    }
+  }
+  wire.dataset.fit = "tight";
+  wire.style.setProperty("--strip", strip + "px");
+  wire.style.setProperty("--wire-gap", gap + "px");
+  if (zoom < 1) wire.style.zoom = zoom.toFixed(3);
+}
+
 function Wires({ game, mine, count, selected, onLay }) {
   const playing = mine && game.phase === "lay";
   const [target, setTarget] = useState(null);
+  const rowsRef = useRef(null);
+  // Runs before card animations measure positions, so cards fly to their squeezed spots.
+  useLayoutEffect(() => {
+    for (const row of rowsRef.current.children) fitWire(row);
+  });
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      for (const row of rowsRef.current?.children ?? []) fitWire(row);
+    });
+    observer.observe(rowsRef.current);
+    return () => observer.disconnect();
+  }, []);
   const captured = new Set();
   if (playing && count && target) {
     const row = [...game.rows[target.row]];
@@ -143,7 +200,7 @@ function Wires({ game, mine, count, selected, onLay }) {
     onBlur=${() => setTarget(null)}
     onClick=${() => { setTarget(null); onLay(i, side); }}
   ><span class="pixel-plus" aria-hidden="true"></span></button>`;
-  return html`<div class=${mine ? "rows my-turn" : "rows"}>
+  return html`<div class=${mine ? "rows my-turn" : "rows"} ref=${rowsRef}>
     ${game.rows.map(
       (row, i) => html`<section class="row" key=${i}>
         ${end(i, "left")}
