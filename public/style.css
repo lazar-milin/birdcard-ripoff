@@ -203,15 +203,20 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 }
 
 /* Turn timer, timeout notices, and host kick control. */
-#timer-toggle{display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;padding:8px;background:#d9f0fa;border-color:#8eafc1}
-#timer-toggle:hover:not(:disabled),#timer-toggle[aria-expanded="true"]{background:#e9f6ff;border-color:#557b95}
+#timer-toggle{display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;padding:8px;background:#d9c7ed;border-color:#876ba8;color:#5c427a}
+#timer-toggle:hover:not(:disabled),#timer-toggle[aria-expanded="true"]{background:#e5d6f4;border-color:#6e5092;color:#4c326e}
 .clock-icon{display:block;width:26px;height:26px;shape-rendering:crispEdges}
 #timer-status{display:flex;flex:0 0 auto;align-items:center;justify-content:center;flex-direction:column;gap:1px;min-height:47px;color:#42637a}
 #timer-status .clock-icon{width:23px;height:23px}
 #timer-status small{font-size:8px;white-space:nowrap;color:#42637a}
 .timer-options{display:grid;gap:7px;padding:8px 0 12px}
 .timer-options button{text-align:left;font-size:12px;padding:9px 12px}
-.timer-options .timer-current{background:#c6e7bd;border-color:#75976c;box-shadow:0 0 4px 2px #69b87599}
+.timer-options .timer-option-0{background:#c6e7bd;border-color:#75976c;color:#305b3e}
+.timer-options .timer-option-30{background:#f2c5bf;border-color:#b86a61;color:#753d37}
+.timer-options .timer-option-60{background:#f6e5a3;border-color:#b7a05a;color:#705d26}
+.timer-options .timer-option-0.timer-current{border-color:#47764f}
+.timer-options .timer-option-30.timer-current{box-shadow:0 0 6px 3px #d56a5b99}
+.timer-options .timer-option-60.timer-current{box-shadow:0 0 6px 3px #e6c44f99}
 .timeout-badge,.kicked-badge{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:1;padding:4px 8px;border:2px solid #b86a61;border-radius:3px;background:#f2c5bf;color:#753d37;font-size:9px;white-space:nowrap}
 .kick-player{flex:0 0 auto;padding:3px 5px;font-size:9px;background:#efc2bc;border-color:#ae756c;color:#713e37}
 .kick-player:hover:not(:disabled){background:#f5d4cf;border-color:#925c54}

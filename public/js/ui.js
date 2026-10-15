@@ -52,8 +52,8 @@ const ScrollIcon = html`<svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden
 </svg>`;
 
 const ClockIcon = html`<svg class="clock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-  <path d="M8 1h8v2h3v3h2v12h-2v3H5v-3H3V6h2V3h3z" fill="none" stroke="currentColor" stroke-width="2" />
-  <path d="M11 5h2v7h4v2h-6z" fill="currentColor" />
+  <path d="M8 2h8v2h4v4h2v8h-2v4h-4v2H8v-2H4v-4H2V8h2V4h4z" fill="none" stroke="currentColor" stroke-width="2" />
+  <path d="M11 6h2v7h5v2h-7z" fill="currentColor" />
 </svg>`;
 const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
@@ -90,7 +90,7 @@ export function TimerPanel({ seconds, onChoose, onClose }) {
     <div class="log-head"><h2>Turn timer</h2><button onClick=${onClose}>Close</button></div>
     <div class="timer-options">
       ${[[0, "No timer"], [30, "30 seconds"], [60, "1 minute"]].map(([value, label]) =>
-        html`<button key=${value} class=${seconds === value ? "timer-current" : ""} aria-pressed=${seconds === value} onClick=${() => onChoose(value)}>${label}</button>`)}
+        html`<button key=${value} class=${`timer-option-${value}${seconds === value ? " timer-current" : ""}`} aria-pressed=${seconds === value} onClick=${() => onChoose(value)}>${label}</button>`)}
     </div>
   </section>`;
 }
