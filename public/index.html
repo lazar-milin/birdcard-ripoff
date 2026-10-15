@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BirdCard Rip-off</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true">
+      <i class="pixel-cloud c1"></i><i class="pixel-cloud c2"></i
+      ><i class="pixel-cloud c3"></i><i class="pixel-cloud c4"></i
+      ><i class="pixel-cloud c5"></i><i class="pixel-cloud c6"></i>
+    </div>
+    <div id="root"></div>
+    <dialog id="rules">
+      <h2>A little field guide</h2>
+      <p>
+        Collect <strong>7 different species</strong>, or
+        <strong>3 birds in each of 2 species</strong>, to win.
+      </p>
+      <ol>
+        <li>
+          Select a species in your hand. Place <strong>all</strong> of those
+          cards at either end of one row.
+        </li>
+        <li>
+          Take the cards between your birds and the nearest matching bird. If
+          the row becomes one species, it automatically refills on the right
+          until a second species appears.
+        </li>
+        <li>If you captured nothing, you may draw two cards.</li>
+        <li>
+          Optionally complete one flock. The two numbers on each card are the
+          thresholds to keep one or two birds. The rest of that species is
+          discarded.
+        </li>
+      </ol>
+      <p>
+        An empty hand ends the round after resolving the draw choice. Everyone
+        gets eight new cards, and that player starts again. If a full redeal is
+        impossible, the largest collection wins; ties share victory.
+      </p>
+      <p>
+        Temporary cards for testing. Game mechanics based on CuBirds by Stefan
+        Alexander. No official artwork included.
+      </p>
+      <form method="dialog"><button>Back to the table</button></form>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

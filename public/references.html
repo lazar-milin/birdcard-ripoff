@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Bird reference picker</title
+  ><style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font: 16px system-ui;
+      background: #e5f3fa;
+      color: #243f54;
+      margin: 0;
+    }
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 32px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .intro {
+      max-width: 800px;
+    }
+    .group {
+      margin: 36px 0;
+    }
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .option {
+      background: white;
+      border: 3px solid transparent;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .option.selected {
+      border-color: #4e8953;
+    }
+    .option img {
+      width: 100%;
+      height: 270px;
+      object-fit: contain;
+      background: #f2f5f3;
+    }
+    .info {
+      padding: 18px;
+    }
+    .info h3 {
+      margin: 0 0 10px;
+    }
+    .info small {
+      display: block;
+      color: #5e6e79;
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+    a {
+      color: #276795;
+    }
+    button {
+      padding: 10px 16px;
+      border: 1px solid #6e9376;
+      border-radius: 7px;
+      background: #d7edcf;
+      color: #294c35;
+      cursor: pointer;
+      font: inherit;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      font: inherit;
+      padding: 12px;
+      border: 1px solid #9cb5c4;
+      border-radius: 8px;
+    }
+    .finish {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      position: relative;
+    }
+    #brief {
+      white-space: pre-wrap;
+      background: #eff6fa;
+      padding: 16px;
+    }
+    .hint {
+      font-size: 14px;
+      color: #567084;
+    }
+    @media (max-width: 600px) {
+      main {
+        padding: 18px;
+      }
+      .options {
+        grid-template-columns: 1fr;
+      }
+      .option img {
+        height: 230px;
+      }
+    }
+  </style>
+  <main>
+    <h1>Pick your bird references</h1>
+    <p class="intro">
+      Two Wikipedia photo references for each card. Some game labels name broad
+      bird groups, so these are visual candidates—not a claim that the game
+      specifies these exact species. Choose A or B for each, or ask for more
+      options. No artwork is being changed yet.
+    </p>
+    <p class="hint">
+      Photos are loaded directly from Wikimedia. Each has its original file and
+      attribution link. Selections stay in this browser; use “Copy selections”
+      to send your choices back in chat.
+    </p>
+    <section class="group">
+      <h2>Flamingo</h2>
+      <div class="options">
+        <article class="option" data-group="Flamingo" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/010_Greater_flamingos_male_and_female_in_the_Camargue_during_mating_season_Photo_by_Giles_Laurent.jpg/330px-010_Greater_flamingos_male_and_female_in_the_Camargue_during_mating_season_Photo_by_Giles_Laurent.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Greater flamingo reference photo"
+          />
+          <div class="info">
+            <h3>A · Greater flamingo</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Greater_flamingo"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:010_Greater_flamingos_male_and_female_in_the_Camargue_during_mating_season_Photo_by_Giles_Laurent.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Giles Laurent</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Flamingo" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/American_Flamingo_JG.jpg/330px-American_Flamingo_JG.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="American flamingo reference photo"
+          />
+          <div class="info">
+            <h3>B · American flamingo</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/American_flamingo"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:American_Flamingo_JG.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY 4.0 · JeffreyGammon</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Owl</h2>
+      <div class="options">
+        <article class="option" data-group="Owl" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/American_Barn_Owl_%28Tyto_furcata_guatemalae%29%2C_Orange_Walk.jpg/330px-American_Barn_Owl_%28Tyto_furcata_guatemalae%29%2C_Orange_Walk.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Barn owl reference photo"
+          />
+          <div class="info">
+            <h3>A · Barn owl</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Barn_owl"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:American_Barn_Owl_(Tyto_furcata_guatemalae)%2C_Orange_Walk.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Charles J. Sharp</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Owl" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Bubo_bubo_3_%28Martin_Mecnarowski%29.jpg/330px-Bubo_bubo_3_%28Martin_Mecnarowski%29.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Eurasian eagle-owl reference photo"
+          />
+          <div class="info">
+            <h3>B · Eurasian eagle-owl</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Eurasian_eagle-owl"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Bubo_bubo_3_(Martin_Mecnarowski).jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small
+              >CC BY-SA 3.0 · Martin Mecnarowski
+              (http://www.photomecan.eu/)</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Toucan</h2>
+      <div class="options">
+        <article class="option" data-group="Toucan" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/006_Toco_toucan_in_Encontro_das_%C3%81guas_State_Park_Photo_by_Giles_Laurent.jpg/330px-006_Toco_toucan_in_Encontro_das_%C3%81guas_State_Park_Photo_by_Giles_Laurent.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Toco toucan reference photo"
+          />
+          <div class="info">
+            <h3>A · Toco toucan</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Toco_toucan"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:006_Toco_toucan_in_Encontro_das_%C3%81guas_State_Park_Photo_by_Giles_Laurent.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Giles Laurent</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Toucan" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Keel-billed_toucan_%28Ramphastos_sulfuratus_sulfuratus%29_on_foxtail_palm_%28Wodyetia_bifurcata%29_Cayo.jpg/330px-Keel-billed_toucan_%28Ramphastos_sulfuratus_sulfuratus%29_on_foxtail_palm_%28Wodyetia_bifurcata%29_Cayo.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Keel-billed toucan reference photo"
+          />
+          <div class="info">
+            <h3>B · Keel-billed toucan</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Keel-billed_toucan"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Keel-billed_toucan_(Ramphastos_sulfuratus_sulfuratus)_on_foxtail_palm_(Wodyetia_bifurcata)_Cayo.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Charles J. Sharp</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Duck</h2>
+      <div class="options">
+        <article class="option" data-group="Duck" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bf/Anas_platyrhynchos_male_female_quadrat.jpg/330px-Anas_platyrhynchos_male_female_quadrat.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Mallard reference photo"
+          />
+          <div class="info">
+            <h3>A · Mallard</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Mallard"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Anas_platyrhynchos_male_female_quadrat.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small
+              >CC BY-SA 2.5 · This picture was realized by Richard Bartz by
+              using a Canon EF 70-300mm f/4-5.6 IS USM Lens </small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Duck" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Pair_of_mandarin_ducks.jpg/330px-Pair_of_mandarin_ducks.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Mandarin duck reference photo"
+          />
+          <div class="info">
+            <h3>B · Mandarin duck</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Mandarin_duck"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Pair_of_mandarin_ducks.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 3.0 · Francis C. Franklin</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Parrot</h2>
+      <div class="options">
+        <article class="option" data-group="Parrot" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Scarlet_macaw_%28Ara_macao_cyanopterus%29_Copan.jpg/330px-Scarlet_macaw_%28Ara_macao_cyanopterus%29_Copan.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Scarlet macaw reference photo"
+          />
+          <div class="info">
+            <h3>A · Scarlet macaw</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Scarlet_macaw"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Scarlet_macaw_(Ara_macao_cyanopterus)_Copan.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Charles J. Sharp</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Parrot" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Perroquet_%C3%A0_Yampopo_Beach_-_Douala.jpg/330px-Perroquet_%C3%A0_Yampopo_Beach_-_Douala.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Grey parrot reference photo"
+          />
+          <div class="info">
+            <h3>B · Grey parrot</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Grey_parrot"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Perroquet_%C3%A0_Yampopo_Beach_-_Douala.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Florettesokeng</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Magpie</h2>
+      <div class="options">
+        <article class="option" data-group="Magpie" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Eurasian_magpie_2024_03_03_02.jpg/330px-Eurasian_magpie_2024_03_03_02.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Eurasian magpie reference photo"
+          />
+          <div class="info">
+            <h3>A · Eurasian magpie</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Eurasian_magpie"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Eurasian_magpie_2024_03_03_02.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY 4.0 · Alexis Lours</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Magpie" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Korean_magpie_in_Daejeon_%28side_profile%29.jpg/330px-Korean_magpie_in_Daejeon_%28side_profile%29.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Oriental magpie reference photo"
+          />
+          <div class="info">
+            <h3>B · Oriental magpie</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Oriental_magpie"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Korean_magpie_in_Daejeon_(side_profile).jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 2.5 · Yoo Chung</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Reed Warbler</h2>
+      <div class="options">
+        <article class="option" data-group="Reed Warbler" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/PleidelsheimerWiesentalTeichrohrsaenger.jpg/330px-PleidelsheimerWiesentalTeichrohrsaenger.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Common reed warbler reference photo"
+          />
+          <div class="info">
+            <h3>A · Common reed warbler</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Common_reed_warbler"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:PleidelsheimerWiesentalTeichrohrsaenger.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY 3.0 · Jürgen Freisinger</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Reed Warbler" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Drosselrohrs%C3%A4nger_Great_reed_warbler.jpg/330px-Drosselrohrs%C3%A4nger_Great_reed_warbler.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="Great reed warbler reference photo"
+          />
+          <div class="info">
+            <h3>B · Great reed warbler</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/Great_reed_warbler"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Drosselrohrs%C3%A4nger_Great_reed_warbler.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 2.5 · Andreas Trepte</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="group">
+      <h2>Robin</h2>
+      <div class="options">
+        <article class="option" data-group="Robin" data-choice="A">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f3/Erithacus_rubecula_with_cocked_head.jpg/330px-Erithacus_rubecula_with_cocked_head.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="European robin reference photo"
+          />
+          <div class="info">
+            <h3>A · European robin</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/European_robin"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Erithacus_rubecula_with_cocked_head.jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 3.0 · Francis C. Franklin</small
+            ><button type="button">Choose A</button>
+          </div>
+        </article>
+        <article class="option" data-group="Robin" data-choice="B">
+          <img
+            src="https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/American_robin_%2871307%29.jpg/330px-American_robin_%2871307%29.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=api&amp;utm_content=thumbnail"
+            alt="American robin reference photo"
+          />
+          <div class="info">
+            <h3>B · American robin</h3>
+            <a
+              href="https://en.wikipedia.org/wiki/American_robin"
+              target="_blank"
+              rel="noreferrer"
+              >Wikipedia</a
+            >
+            ·
+            <a
+              href="https://commons.wikimedia.org/wiki/File:American_robin_(71307).jpg"
+              target="_blank"
+              rel="noreferrer"
+              >Original photo & attribution</a
+            ><small>CC BY-SA 4.0 · Rhododendrites</small
+            ><button type="button">Choose B</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="finish">
+      <h2>How should we style them?</h2>
+      <p>
+        Describe the treatment: pixel art, flat shapes, ink drawing, painted, or
+        something else. You can also choose a full-body pose or a close-up, and
+        a background treatment.
+      </p>
+      <textarea
+        id="style"
+        placeholder="For example: chunky pixel art, whole bird, simple silhouette, no scenery…"
+      ></textarea>
+      <pre id="brief"></pre>
+      <button id="copy">Copy selections</button
+      ><span id="status" role="status"></span>
+    </section>
+  </main>
+  <script>
+    const picks=JSON.parse(localStorage.getItem('bird-reference-picks')||'{}');const style=document.querySelector('#style');style.value=localStorage.getItem('bird-reference-style')||'';
+    function update(){document.querySelectorAll('.option').forEach(el=>{const selected=picks[el.dataset.group]===el.dataset.choice;el.classList.toggle('selected',selected);el.querySelector('button').setAttribute('aria-pressed',selected);el.querySelector('button').textContent=selected?'Selected '+el.dataset.choice:'Choose '+el.dataset.choice;});document.querySelector('#brief').textContent=Object.entries(picks).map(([g,c])=>g+': '+c).join('
+    ')+'
+
+    Style: '+(style.value||'(not chosen yet)');localStorage.setItem('bird-reference-picks',JSON.stringify(picks));localStorage.setItem('bird-reference-style',style.value);}
+    document.querySelectorAll('.option button').forEach(b=>b.onclick=()=>{const el=b.closest('.option');picks[el.dataset.group]=el.dataset.choice;update();});style.oninput=update;document.querySelector('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(document.querySelector('#brief').textContent);document.querySelector('#status').textContent=' Copied. Paste into the chat.';}catch{document.querySelector('#status').textContent=' Select and copy the text above.';}};update();
+  </script>
+</html>
