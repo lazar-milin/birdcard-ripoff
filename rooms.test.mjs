@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRoom, join, leave, start, play, phase, unfinishedSeat, MAX_SEATS } from "./rooms.mjs";
+import { createRoom, join, leave, start, play, phase, unfinishedSeat, setTimer, timeout, kick, MAX_SEATS } from "./rooms.mjs";
 import { SPECIES, speciesOf } from "./public/species.js";
 
 const P = (id) => ({ id, name: id.toUpperCase() });
@@ -14,6 +14,57 @@ test("the creator hosts a new lobby", () => {
   assert.equal(room.host, "a");
   assert.deepEqual(ids(room), ["a"]);
   assert.equal(phase(room), "lobby");
+});
+
+test("only the host sets a supported timer, including in the lobby", () => {
+  const room = lobby("a", "b");
+  assert.equal(room.timer, 0);
+  assert.throws(() => setTimer(room, "b", 30), /Only the host/);
+  assert.throws(() => setTimer(room, "a", 12), /Choose/);
+  assert.equal(setTimer(room, "a", 30).timer, 30);
+  assert.equal(setTimer(room, "a", 60).timer, 60);
+  assert.equal(setTimer(room, "a", 0), room);
+});
+
+test("timeouts resolve lay, draw and flock, count once, and allow a host kick", () => {
+  let room = start(lobby("a", "b"), "a");
+  room.game.turn = 1;
+  const before = [
+    ...room.game.deck, ...room.game.discard, ...room.game.rows.flat(),
+    ...room.game.players.flatMap((p) => [...p.hand, ...p.collection]),
+  ].sort();
+  room = timeout(room);
+  assert.equal(room.players[1].timeouts, 1);
+  assert.equal(room.players[1].timedOut, true);
+  assert.equal(room.game.phase, "lay");
+  assert.equal(room.game.players[room.game.turn].id, "a");
+  assert(room.game.events.some((e) => e.type === "lay" && e.timeout));
+  assert.throws(() => kick(room, "a", "b"), /cannot be kicked yet/);
+  const nextTurn = play({ ...room, game: { ...room.game, phase: "flock" } }, "a", { type: "pass" });
+  assert.equal(nextTurn.game.players[nextTurn.game.turn].id, "b");
+  assert.equal(nextTurn.players[1].timedOut, false, "the badge clears on the player's next turn");
+  room.game.turn = 1;
+  room.game.phase = "draw";
+  room = timeout(room);
+  assert.equal(room.players[1].timeouts, 2);
+  assert(room.game.events.some((e) => e.type === "draw" && e.timeout && e.skipped));
+  room.game.turn = 1;
+  room.game.phase = "flock";
+  room = timeout(room);
+  assert.equal(room.players[1].timeouts, 3);
+  assert(room.game.events.some((e) => e.type === "pass" && e.timeout));
+  assert.throws(() => kick(room, "b", "a"), /Only the host/);
+  assert.throws(() => kick(room, "a", "a"), /cannot kick themselves/);
+  const kicked = kick(room, "a", "b");
+  assert.equal(kicked.players[1].kicked, true);
+  assert.equal(kicked.game.players.length, 1);
+  assert.deepEqual([
+    ...kicked.game.deck, ...kicked.game.discard, ...kicked.game.rows.flat(),
+    ...kicked.game.players.flatMap((p) => [...p.hand, ...p.collection]),
+  ].sort(), before);
+  assert.throws(() => join(kicked, P("b")), /removed/);
+  assert.equal(unfinishedSeat([kicked], "b", "OTHER"), null);
+  assert.equal(start(finish(kicked), "a").players.length, 1);
 });
 
 test("a lobby seats up to five players", () => {

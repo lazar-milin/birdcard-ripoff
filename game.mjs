@@ -117,7 +117,7 @@ function endTurn(g) {
   emit(g, { type: "turn", player: g.players[g.turn].id, round: g.round });
 }
 // Apply to a copy so rejected moves never partially alter a live game.
-export function move(state, id, action) {
+export function move(state, id, action, { timeout = false } = {}) {
   const g = structuredClone(state),
     p = g.players[g.turn];
   assert(g.phase !== "over", "This game is finished.");
@@ -148,6 +148,7 @@ export function move(state, id, action) {
       cards,
       row: action.row,
       side: action.side,
+      ...(timeout ? { timeout: true } : {}),
     });
     if (captured.length) {
       emit(g, {
@@ -180,6 +181,7 @@ export function move(state, id, action) {
       cards,
       count: cards.length,
       skipped: !action.take,
+      ...(timeout ? { timeout: true } : {}),
     });
     g.phase = "flock";
     if (!p.hand.length) endTurn(g);
@@ -205,9 +207,32 @@ export function move(state, id, action) {
     endTurn(g);
   } else if (action.type === "pass") {
     assert(g.phase === "flock", "Finish the current step first.");
-    emit(g, { type: "pass", player: p.id });
+    emit(g, { type: "pass", player: p.id, ...(timeout ? { timeout: true } : {}) });
     endTurn(g);
   } else throw new Error("Unknown move.");
+  return g;
+}
+
+// Remove a timed-out player without losing any of the 110 cards. The room
+// keeps their seat for the kicked balloon, but the game no longer takes turns
+// for them.
+export function kick(state, id) {
+  const g = structuredClone(state);
+  assert(g.phase !== "over", "This game is finished.");
+  const index = g.players.findIndex((p) => p.id === id);
+  assert(index >= 0, "That player is not in the game.");
+  assert(g.players.length > 1, "The last player cannot be kicked.");
+  const [player] = g.players.splice(index, 1);
+  const hand = player.hand;
+  const collection = player.collection;
+  g.discard.push(...hand, ...collection);
+  emit(g, { type: "kick", player: id, hand, collection, cards: [...hand, ...collection] });
+  if (index < g.turn) g.turn--;
+  else if (index === g.turn) {
+    g.turn %= g.players.length;
+    g.phase = "lay";
+    emit(g, { type: "turn", player: g.players[g.turn].id, round: g.round });
+  }
   return g;
 }
 // Cards another player drew stay hidden; everything else in an event is public.

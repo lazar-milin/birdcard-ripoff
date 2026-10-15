@@ -206,3 +206,44 @@ test("open tables list only unstarted lobbies with public codes and counts", asy
   const full = await table("Full host", "Seat 2", "Seat 3", "Seat 4", "Seat 5");
   assert.equal((await api("tables")).data.tables.some((t) => t.code === full.room.code), false);
 });
+
+test("host timer broadcasts, expires a turn, and enables kicking after two timeouts", async () => {
+  const oldSecond = config.turnSecondMs;
+  config.turnSecondMs = 4;
+  try {
+    const { people: [host, guest], room: lobby } = await table("Timer host", "Timer guest");
+    assert.equal(lobby.timer, 0);
+    assert.equal((await api("timer", { version: lobby.version, seconds: 30 }, guest.token)).status, 400);
+    let state = (await api("timer", { version: lobby.version, seconds: 30 }, host.token)).data;
+    assert.equal(state.timer, 30);
+    assert.equal((await api("state", null, guest.token)).data.timer, 30);
+    state = (await api("start", { version: state.version }, host.token)).data;
+    assert(state.deadline > Date.now());
+    const firstDeadline = state.deadline;
+    state = (await api("timer", { version: state.version, seconds: 60 }, host.token)).data;
+    assert(state.deadline > firstDeadline);
+    state = (await api("timer", { version: state.version, seconds: 30 }, host.token)).data;
+    let guestTimeouts = 0;
+    for (let n = 0; n < 10 && guestTimeouts < 2; n++) {
+      const next = await api(`state?since=${state.version}`, null, host.token);
+      assert.equal(next.status, 200);
+      state = next.data;
+      guestTimeouts = state.players.find((p) => p.id === guest.id).timeouts;
+    }
+    assert(guestTimeouts >= 2, "the absent guest timed out twice");
+    assert(state.game.events.some((e) => e.type === "lay" && e.timeout));
+    state = (await api("timer", { version: state.version, seconds: 0 }, host.token)).data;
+    assert.equal(state.deadline, null);
+    assert.equal((await api("kick", { version: state.version, playerId: host.id }, host.token)).status, 400);
+    const kicked = await api("kick", { version: state.version, playerId: guest.id }, host.token);
+    assert.equal(kicked.status, 200);
+    assert.equal(kicked.data.players.find((p) => p.id === guest.id).kicked, true);
+    assert.equal(kicked.data.game.players.length, 1);
+    const excluded = await api("state", null, guest.token);
+    assert.equal(excluded.status, 400);
+    assert.match(excluded.data.error, /host removed you/);
+    assert.equal((await api("join", { create: true }, guest.token)).status, 200);
+  } finally {
+    config.turnSecondMs = oldSecond;
+  }
+});

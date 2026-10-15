@@ -12,8 +12,9 @@ const rooms = new Map(),
   limits = new Map();
 // Long-poll requests waiting for a table to change, by table code.
 const waiting = new Map();
+const turnTimers = new Map();
 // How long a long-poll request waits before returning unchanged state. Tests shorten it.
-export const config = { longPollMs: 25000 };
+export const config = { longPollMs: 25000, turnSecondMs: 1000 };
 const guests = process.env.ALLOW_GUESTS !== "false" && process.env.NODE_ENV !== "production";
 const key = () => randomBytes(24).toString("hex");
 const guestColors = ["Amber", "Azure", "Coral", "Jade", "Lilac", "Silver", "Saffron", "Indigo"],
@@ -42,6 +43,8 @@ function snapshot(room, id) {
     code: room.code,
     host: room.host,
     standings: room.standings ?? [],
+    timer: room.timer ?? 0,
+    deadline: room.deadline ?? null,
     version: room.version,
     players: room.players,
     game: room.game ? view(room.game, id) : null,
@@ -54,10 +57,13 @@ function session(req) {
   if (!s || Date.now() - s.created > 86400000) throw new Error("Session expired. Reload to sign in.");
   return s;
 }
-const seated = (room, s) => room?.players.some((p) => p.id === s.id);
+const seated = (room, s) => room?.players.some((p) => p.id === s.id && !p.kicked);
 function roomFor(s) {
   const room = rooms.get(s.room);
-  if (!seated(room, s)) throw new Error("Join a table first.");
+  if (!seated(room, s))
+    throw new Error(room?.players.some((p) => p.id === s.id && p.kicked)
+      ? "The host removed you from this table."
+      : "Join a table first.");
   room.touched = Date.now();
   return room;
 }
@@ -66,7 +72,26 @@ function roomFor(s) {
 function commit(code, next) {
   const prev = rooms.get(code);
   if (next === prev) return prev;
-  if (next) rooms.set(code, { ...next, version: (prev?.version ?? 0) + 1, touched: Date.now() });
+  clearTimeout(turnTimers.get(code));
+  turnTimers.delete(code);
+  if (next) {
+    const running = next.game && next.game.phase !== "over" && next.timer;
+    const restarted = !prev || prev.timer !== next.timer ||
+      prev.game?.id !== next.game?.id || prev.game?.seq !== next.game?.seq;
+    const deadline = running
+      ? restarted ? Date.now() + next.timer * config.turnSecondMs : next.deadline
+      : null;
+    rooms.set(code, { ...next, deadline, version: (prev?.version ?? 0) + 1, touched: Date.now() });
+    if (deadline) {
+      const timer = setTimeout(() => {
+        const current = rooms.get(code);
+        if (current?.deadline === deadline && Date.now() >= deadline)
+          commit(code, Rooms.timeout(current));
+      }, Math.max(0, deadline - Date.now()));
+      timer.unref();
+      turnTimers.set(code, timer);
+    }
+  }
   else rooms.delete(code);
   wake(code);
   return rooms.get(code) ?? null;
@@ -75,7 +100,9 @@ function commit(code, next) {
 function answer(w) {
   clearTimeout(w.timer);
   const room = rooms.get(w.code);
-  if (w.session.room !== w.code || !seated(room, w.session)) return json(w.res, 400, { error: "Join a table first." });
+  if (w.session.room !== w.code || !seated(room, w.session))
+    return json(w.res, 400, { error: room?.players.some((p) => p.id === w.session.id && p.kicked)
+      ? "The host removed you from this table." : "Join a table first." });
   json(w.res, 200, snapshot(room, w.session.id));
 }
 function wake(code) {
@@ -135,6 +162,8 @@ export const server = http.createServer(async (req, res) => {
         if (password !== "deletor") return json(res, 403, { error: "Incorrect password. No rooms were deleted." });
         const deleted = rooms.size;
         const codes = [...rooms.keys()];
+        for (const timer of turnTimers.values()) clearTimeout(timer);
+        turnTimers.clear();
         rooms.clear();
         for (const s of sessions.values()) s.room = null;
         codes.forEach(wake);
@@ -210,9 +239,13 @@ export const server = http.createServer(async (req, res) => {
         return json(res, 200, snapshot(rooms.get(code), s.id));
       }
       const room = roomFor(s);
+      if (url.pathname === "/api/move" && room.deadline && Date.now() >= room.deadline)
+        commit(room.code, Rooms.timeout(room));
       if (b.version !== room.version) return json(res, 409, { error: "The table changed. Please try again." });
       if (url.pathname === "/api/start") commit(room.code, Rooms.start(room, s.id));
       else if (url.pathname === "/api/rematch") commit(room.code, Rooms.proposeRematch(room, s.id));
+      else if (url.pathname === "/api/timer") commit(room.code, Rooms.setTimer(room, s.id, b.seconds));
+      else if (url.pathname === "/api/kick") commit(room.code, Rooms.kick(room, s.id, b.playerId));
       else if (url.pathname === "/api/move") commit(room.code, Rooms.play(room, s.id, b.action || {}));
       else if (url.pathname === "/api/leave") {
         const { room: next, saved } = Rooms.leave(room, s.id);
@@ -250,12 +283,18 @@ setInterval(() => {
   const cutoff = Date.now() - 86400000;
   for (const [k, v] of rooms)
     if (v.touched < cutoff) {
+      clearTimeout(turnTimers.get(k));
+      turnTimers.delete(k);
       rooms.delete(k);
       wake(k);
     }
   for (const [k, v] of sessions) if (v.created < cutoff) sessions.delete(k);
   for (const [k, v] of limits) if (v.time < Date.now() - 120000) limits.delete(k);
 }, 60000).unref();
+server.on("close", () => {
+  for (const timer of turnTimers.values()) clearTimeout(timer);
+  turnTimers.clear();
+});
 if (process.argv[1] === fileURLToPath(import.meta.url))
   server.listen(Number(process.env.PORT || 3000), process.env.HOST || "127.0.0.1", () =>
     console.log(`Bird Table running at http://${process.env.HOST || "127.0.0.1"}:${process.env.PORT || 3000}`),

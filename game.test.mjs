@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { start, move, view, newDeck } from "./game.mjs";
+import { start, move, kick, view, newDeck } from "./game.mjs";
 import { SPECIES, speciesOf } from "./public/species.js";
 const players = [
   { id: "a", name: "Alice" },
@@ -39,6 +39,30 @@ test("setup deals 110 uniquely identified cards and keeps hands private", () => 
     g.events.map((e) => e.type),
     ["start", "turn"],
   );
+});
+
+test("kicking a player discards their hand and collection without losing cards", () => {
+  const g = start(players);
+  g.turn = 1;
+  const removed = g.players[1];
+  const before = all(g).sort();
+  const next = kick(g, removed.id);
+  assert.deepEqual(all(next).sort(), before);
+  assert.deepEqual(next.players.map((p) => p.id), ["a"]);
+  assert.equal(next.phase, "lay");
+  assert.equal(next.players[next.turn].id, "a");
+  assert(next.discard.includes(removed.hand[0]));
+  assert(next.discard.includes(removed.collection[0]));
+  assert.deepEqual(next.events.at(-2).cards, [...removed.hand, ...removed.collection]);
+  assert.equal(next.events.at(-1).type, "turn");
+  assert.equal(g.players.length, 2, "the original game is unchanged");
+});
+
+test("only a server-authored timeout marks a lay event", () => {
+  const g = fixture();
+  const action = { type: "lay", bird: speciesOf(g.players[0].hand[0]), row: 0, side: "left", timeout: true };
+  assert.equal(move(g, "a", action).events.at(-1).timeout, undefined);
+  assert.equal(move(g, "a", action, { timeout: true }).events.find((e) => e.type === "lay").timeout, true);
 });
 test("capture stops at nearest match and lays every matching hand card", () => {
   const g = fixture();

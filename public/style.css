@@ -201,3 +201,20 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
   .table-header .header-left{display:none}
   .table-header .header-controls{flex:1 1 auto;gap:6px}
 }
+
+/* Turn timer, timeout notices, and host kick control. */
+#timer-toggle{display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;padding:8px;background:#d9f0fa;border-color:#8eafc1}
+#timer-toggle:hover:not(:disabled),#timer-toggle[aria-expanded="true"]{background:#e9f6ff;border-color:#557b95}
+.clock-icon{display:block;width:26px;height:26px;shape-rendering:crispEdges}
+#timer-status{display:flex;flex:0 0 auto;align-items:center;justify-content:center;flex-direction:column;gap:1px;min-height:47px;color:#42637a}
+#timer-status .clock-icon{width:23px;height:23px}
+#timer-status small{font-size:8px;white-space:nowrap;color:#42637a}
+.timer-options{display:grid;gap:7px;padding:8px 0 12px}
+.timer-options button{text-align:left;font-size:12px;padding:9px 12px}
+.timer-options .timer-current{background:#c6e7bd;border-color:#75976c;box-shadow:0 0 4px 2px #69b87599}
+.timeout-badge,.kicked-badge{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:1;padding:4px 8px;border:2px solid #b86a61;border-radius:3px;background:#f2c5bf;color:#753d37;font-size:9px;white-space:nowrap}
+.kick-player{flex:0 0 auto;padding:3px 5px;font-size:9px;background:#efc2bc;border-color:#ae756c;color:#713e37}
+.kick-player:hover:not(:disabled){background:#f5d4cf;border-color:#925c54}
+.kicked-player{min-height:94px}
+.kicked-player::before{inset:12px 18px 10px;background:#f5fcff;clip-path:polygon(35% 0,65% 0,78% 10%,90% 27%,96% 47%,92% 67%,79% 84%,57% 94%,54% 100%,46% 100%,43% 94%,21% 84%,8% 67%,4% 47%,10% 27%,22% 10%)}
+.kicked-player .kicked-badge{top:2px}

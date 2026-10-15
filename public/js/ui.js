@@ -51,7 +51,13 @@ const ScrollIcon = html`<svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden
   <path d="M10 10h4m-4 4h4" fill="none" stroke="currentColor" stroke-width="2" />
 </svg>`;
 
-export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, muted = true, onToggleSound, onCopy, onLeave, children }) {
+const ClockIcon = html`<svg class="clock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d="M8 1h8v2h3v3h2v12h-2v3H5v-3H3V6h2V3h3z" fill="none" stroke="currentColor" stroke-width="2" />
+  <path d="M11 5h2v7h4v2h-6z" fill="currentColor" />
+</svg>`;
+const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
+
+export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onLeave, children }) {
   const g = room?.game;
   return html`<header class=${room ? `table-header${g ? ` game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}` : ""}>
     <div class="header-left">
@@ -61,7 +67,9 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
       <button id="sound-toggle" aria-label=${muted ? "Unmute sounds" : "Mute sounds"} title=${muted ? "Unmute sounds" : "Mute sounds"} aria-pressed=${!muted} onClick=${onToggleSound}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l11-2v12M9 9l11-2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h6v5H3zm11-2h6v5h-6z" fill="currentColor"/>${muted && html`<path d="M3 3l18 18" stroke="#ba4949" stroke-width="3" />`}</svg>
       </button>
+      ${room && room.you !== room.host && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
+      ${room && room.you === room.host && html`<button id="timer-toggle" aria-label="Turn timer" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}</button>`}
       ${g && html`<button id="birdhouse" aria-label="Deck and discards" aria-expanded=${deckOpen} aria-controls="deck-panel" onClick=${onToggleDeck}>
         <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
         <span><span data-pile="deck"><b>${g.deckCount}</b> in deck</span><small data-pile="discard"><b>${g.discardCount}</b> discarded</small></span>
@@ -75,6 +83,16 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
     </div>
     ${children}
   </header>`;
+}
+
+export function TimerPanel({ seconds, onChoose, onClose }) {
+  return html`<section id="timer-panel" class="log-panel" aria-label="Turn timer settings">
+    <div class="log-head"><h2>Turn timer</h2><button onClick=${onClose}>Close</button></div>
+    <div class="timer-options">
+      ${[[0, "No timer"], [30, "30 seconds"], [60, "1 minute"]].map(([value, label]) =>
+        html`<button key=${value} class=${seconds === value ? "timer-current" : ""} aria-pressed=${seconds === value} onClick=${() => onChoose(value)}>${label}</button>`)}
+    </div>
+  </section>`;
 }
 
 export function TableLog({ game, ctx, onClose }) {
@@ -111,7 +129,7 @@ export function DeckPanel({ game, onClose }) {
   </section>`;
 }
 
-export function Scoreboard({ room }) {
+export function Scoreboard({ room, onKick }) {
   const g = room.game;
   return html`<div class=${`scoreboard${g ? " game-scoreboard" : ""}${g && room.players.length >= 3 ? " crowded-scoreboard" : ""}`}>
     <div class="players">
@@ -119,11 +137,16 @@ export function Scoreboard({ room }) {
         const gp = g?.players.find((x) => x.id === p.id);
         const speciesCount = new Set((gp?.collection ?? []).map(speciesOf)).size;
         const active = g && g.phase !== "over" && g.players[g.turn].id === p.id;
+        if (p.kicked) return html`<section key=${p.id} class="player kicked-player" data-player=${p.id}>
+          <span class="kicked-badge">Player kicked</span>
+        </section>`;
         return html`<section key=${p.id} class=${active ? "player active" : "player"} data-player=${p.id}>
+          ${p.timedOut && html`<span class="timeout-badge">TIMED OUT</span>`}
           ${g?.phase === "over" && p.wantsRematch && html`<span class="rematch-badge">WANTS A REMATCH</span>`}
           <strong class="player-name">
             ${p.id === room.host && html`<svg class="host-star" viewBox="0 0 16 16" role="img" aria-label="Host"><path d="M6 0h4v4h2v2h4v4h-4v2h2v4h-4v-2H6v2H2v-4h2v-2H0V6h4V4h2z" fill="currentColor" /></svg>`}
             <span class=${p.id === room.you ? "own-name" : ""} aria-label=${p.id === room.you ? `${p.name}, you` : undefined}>${p.name}</span>${p.away ? " · away" : ""}
+            ${g && g.phase !== "over" && room.you === room.host && p.id !== room.host && p.timeouts >= 2 && html`<button class="kick-player" aria-label=${`Kick ${p.name}`} onClick=${() => onKick(p.id)}>Kick</button>`}
           </strong>
           <small>${gp ? html`<span class=${`hand-count${gp.handCount === 4 ? " hand-count-yellow" : gp.handCount === 2 || gp.handCount === 3 ? " hand-count-orange" : gp.handCount === 1 ? " hand-count-red" : ""}`}>${gp.handCount} in hand</span> · <span class=${`species-count${speciesCount >= 7 ? " species-count-complete" : speciesCount === 6 ? " species-count-close" : ""}`}>${speciesCount}/7 species</span>` : "Ready to play"}</small>
           <${Chips} player=${p.id} collection=${gp?.collection ?? []} showMissing=${true} />

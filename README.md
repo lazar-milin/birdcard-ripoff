@@ -51,11 +51,13 @@ Tests cover setup, captures from both ends, refill, draw/round timing, scoring, 
 
 ## Prototype limits
 
-Rooms and sessions live in memory and expire after 24 hours. Restarting the server clears games. Use one server process; persistent storage and multi-process coordination are not implemented. There are no bots, spectators, turn timers, or mid-game seat replacement. A disconnected player retains their seat; other players wait for them to return. Table codes are the invitation mechanism; automatic Discord-instance matching is not implemented. This is ready for local playtesting, not a claimed production launch.
+Rooms and sessions live in memory and expire after 24 hours. Restarting the server clears games. Use one server process; persistent storage and multi-process coordination are not implemented. There are no bots, spectators, or mid-game seat replacement. A disconnected player retains their seat; with the timer off, the table waits for them. Table codes are the invitation mechanism; automatic Discord-instance matching is not implemented. This is ready for local playtesting, not a claimed production launch.
 
 Refill convention: the server automatically adds cards on the right until a second species appears. The printed rules permit either end; with a single-species row, the outcomes are mirror-equivalent.
 
 ## Room controls and flock hints
+
+The host can choose No timer, 30 seconds, or 1 minute from the header clock in the lobby or during a game. The server restarts the countdown for the current step whenever the setting changes, and starts a fresh countdown after each move. If it expires during lay, the server lays a random bird group on a random wire end; during draw or flock it skips the pending choice. Either way the turn then ends. Timeouts accumulate per player for that game. After two total timeouts, the host can kick that player; their hand and collection go to the discard pile, and their seat is excluded until a new game starts. A kicked player can join another table immediately, or rejoin this table after its current game finishes. If one player remains, play continues solo.
 
 Use Leave room in the header at any time, then enter a generated room code on the entry screen. The room rules live in `rooms.mjs`:
 

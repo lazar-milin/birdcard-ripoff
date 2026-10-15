@@ -33,7 +33,7 @@ export function people(ids, ctx) {
   return names.slice(0, -1).join(", ") + " and " + names.at(-1);
 }
 
-const ACTIONS = new Set(["lay", "capture", "refill", "draw", "flock", "pass", "round"]);
+const ACTIONS = new Set(["lay", "capture", "refill", "draw", "flock", "pass", "round", "kick"]);
 export const isAction = (e) => ACTIONS.has(e.type);
 
 // Returns sentence parts for one event, or null for events the history skips.
@@ -45,7 +45,7 @@ export function describe(e, ctx) {
     case "start":
       return [yours ? "You deal and play first." : `${who} deals and plays first.`];
     case "lay":
-      return [`${who} laid `, birds(e.species, e.cards.length), ` on the ${e.side} end of wire ${e.row + 1}.`];
+      return [e.timeout ? `Time ran out for ${who}. ` : "", `${who} laid `, birds(e.species, e.cards.length), ` on the ${e.side} end of wire ${e.row + 1}.`];
     case "capture":
       return [`${who} took `, ...cardList(e.cards), "."];
     case "refill":
@@ -53,7 +53,7 @@ export function describe(e, ctx) {
         ? [`Wire ${e.row + 1} refilled with `, ...cardList(e.cards), "."]
         : [`Wire ${e.row + 1} could not refill because no cards were left.`];
     case "draw":
-      if (e.skipped) return [`${who} skipped the draw.`];
+      if (e.skipped) return [e.timeout ? `Time ran out for ${who}. ` : "", `${who} skipped the draw.`];
       if (!e.count) return [`${who} tried to draw, but no cards were left.`];
       return e.cards
         ? [`${who} drew `, ...cardList(e.cards), "."]
@@ -61,7 +61,9 @@ export function describe(e, ctx) {
     case "flock":
       return [`${who} completed a ${e.size} `, { species: e.species, text: nameOf(e.species) }, ` flock and kept ${e.kept.length}.`];
     case "pass":
-      return [`${who} ended ${yours ? "your" : "their"} turn.`];
+      return [e.timeout ? `Time ran out for ${who}. ` : "", `${who} ended ${yours ? "your" : "their"} turn.`];
+    case "kick":
+      return [`${who} was removed from the table; `, ...cardList(e.cards), " went to the discard pile."];
     case "round":
       return [`${who} emptied ${yours ? "your" : "their"} hand. Round ${e.round} begins, and everyone gets eight new cards.`];
     case "over": {

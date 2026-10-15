@@ -1,9 +1,10 @@
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useCallback } from "./vendor/preact.js";
 import { api, session } from "./js/api.js";
 import { shouldAutoEnd } from "./js/auto-turn.js";
+import { changedEvents } from "./js/events.js";
 import { capture, play } from "./js/motion.js";
 import { isMuted, toggleSound, subscribeSound, installSoundUnlock, playSounds } from "./js/sound.js";
-import { Header, TableLog, TableScoreboard, DeckPanel, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
+import { Header, TimerPanel, TableLog, TableScoreboard, DeckPanel, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
   const [logOpen, setLogOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
   const [deckOpen, setDeckOpen] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const roomRef = useRef(null);
   const shown = useRef(null);
@@ -32,6 +34,8 @@ function App() {
   const accept = useCallback((next) => {
     const current = roomRef.current;
     if (current && next.code === current.code && next.version <= current.version) return;
+    if (changedEvents(current, next).some((e) => e.timeout && e.player === next.you))
+      setNotice("Turn ended because time ran out. A move was made for you.");
     playSounds(current, next);
     capture();
     roomRef.current = next;
@@ -45,6 +49,7 @@ function App() {
     setLogOpen(false);
     setScoreboardOpen(false);
     setDeckOpen(false);
+    setTimerOpen(false);
     setScreen("entrance");
     setNotice(message);
   }, []);
@@ -58,7 +63,10 @@ function App() {
     if (busy.current || !roomRef.current) return;
     busy.current = true;
     try {
-      const result = await api(path, { version: roomRef.current.version, action });
+      const result = await api(path, {
+        version: roomRef.current.version,
+        ...(path === "move" ? { action } : action ?? {}),
+      });
       setSelected(null);
       if (path === "leave")
         toEntrance(result.saved ? `Left room ${result.code}. Your seat is saved; rejoin with this code.` : "You left the room.");
@@ -143,18 +151,22 @@ function App() {
           session.set("name", login.name);
         } else if (!cfg.guests) throw new Error("Open this game inside Discord.");
         if (session.get("token")) {
+          let removedMessage = "";
           try {
             accept(await api("state"));
             setScreen("room");
             return;
-          } catch {}
+          } catch (e) {
+            if (e.message === "The host removed you from this table.") removedMessage = e.message;
+          }
           const saved = session.get("room");
           if (saved) {
             try {
               accept(await api("join", { code: saved }));
               setScreen("room");
               return;
-            } catch {
+            } catch (e) {
+              if (e.message === "The host removed you from this table.") removedMessage = e.message;
               session.remove("room");
             }
           }
@@ -166,6 +178,7 @@ function App() {
               session.remove("name");
             }
           }
+          if (removedMessage) setNotice(removedMessage);
         }
         setScreen("entrance");
       } catch (e) {
@@ -195,6 +208,8 @@ function App() {
           setNotice((n) => (n.startsWith("Connection lost") ? "Reconnected." : n));
         } catch (e) {
           if (stopped) return;
+          if (e.message === "The host removed you from this table.")
+            return toEntrance(e.message);
           if (e.message === "Join a table first.")
             return toEntrance("This room was removed. Create a new room or join by code.");
           failures++;
@@ -212,11 +227,11 @@ function App() {
   }, [screen]);
 
   useEffect(() => {
-    if (!logOpen && !scoreboardOpen && !deckOpen) return;
-    const close = (e) => { if (e.key === "Escape") { setLogOpen(false); setScoreboardOpen(false); setDeckOpen(false); } };
+    if (!logOpen && !scoreboardOpen && !deckOpen && !timerOpen) return;
+    const close = (e) => { if (e.key === "Escape") { setLogOpen(false); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); } };
     addEventListener("keydown", close);
     return () => removeEventListener("keydown", close);
-  }, [logOpen, scoreboardOpen, deckOpen]);
+  }, [logOpen, scoreboardOpen, deckOpen, timerOpen]);
 
   const inRoom = screen === "room" && room;
   const ctx = room && {
@@ -241,7 +256,8 @@ function App() {
   }
 
   return html`
-    <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+    <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); setTimerOpen(false); }} timerOpen=${timerOpen} onToggleTimer=${() => { setTimerOpen((o) => !o); setDeckOpen(false); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); setTimerOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+      ${inRoom && room.you === room.host && timerOpen && html`<${TimerPanel} seconds=${room.timer ?? 0} onChoose=${(seconds) => { setTimerOpen(false); act("timer", { seconds }); }} onClose=${() => setTimerOpen(false)} />`}
       ${inRoom && room.game && deckOpen && html`<${DeckPanel} game=${room.game} onClose=${() => setDeckOpen(false)} />`}
       ${inRoom && room.game && scoreboardOpen && html`<${TableScoreboard} room=${room} onClose=${() => setScoreboardOpen(false)} />`}
       ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} />`}
@@ -265,7 +281,7 @@ function App() {
         onClearName=${clearGuestName}
         onReset=${() => setResetOpen(true)}
       />`}
-      ${inRoom && html`<${Scoreboard} room=${room} />`}
+      ${inRoom && html`<${Scoreboard} room=${room} onKick=${(playerId) => act("kick", { playerId })} />`}
       ${inRoom &&
       (room.game
         ? html`<${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />`
