@@ -11,6 +11,10 @@ function App() {
     const unsubscribe = subscribeSound(setMuted), cleanup = installSoundUnlock();
     return () => { unsubscribe(); cleanup(); };
   }, []);
+import { Header, TableLog, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
+
+
+function App() {
   const [screen, setScreen] = useState("boot"); // boot, error, entrance or room
   const [room, setRoom] = useState(null);
   const [notice, setNotice] = useState("");
@@ -190,6 +194,11 @@ function App() {
     addEventListener("keydown", close);
     return () => removeEventListener("keydown", close);
   }, [logOpen, scoreboardOpen]);
+    if (!logOpen) return;
+    const close = (e) => e.key === "Escape" && setLogOpen(false);
+    addEventListener("keydown", close);
+    return () => removeEventListener("keydown", close);
+  }, [logOpen]);
 
   const inRoom = screen === "room" && room;
   const ctx = room && {
@@ -216,6 +225,7 @@ function App() {
   return html`
     <${Header} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
       ${inRoom && scoreboardOpen && html`<${TableScoreboard} room=${room} onClose=${() => setScoreboardOpen(false)} />`}
+    <${Header} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => setLogOpen((o) => !o)} onCopy=${copyCode} onLeave=${() => act("leave")}>
       ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} />`}
     <//>
     <main id="app">
