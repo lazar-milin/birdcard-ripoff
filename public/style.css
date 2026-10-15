@@ -43,3 +43,75 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 @media(max-width:650px){.log-panel{left:12px;top:auto;bottom:12px;max-height:55vh;font-size:11px}#log-toggle{min-height:40px;font-size:11px;padding:6px 10px}}
 @media(prefers-reduced-motion:reduce){.ghost{display:none}}
 .seat-note{text-align:center;color:#466982;margin:18px 0 12px}
+/* Compact progress clouds and expanding header controls. */
+#leave-room.expand-control,#log-toggle.expand-control{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:47px;height:47px;padding:10px;gap:0}
+.scroll-icon,.leave-icon{width:23px;height:23px;flex-shrink:0;shape-rendering:crispEdges}
+.control-label{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width .18s,opacity .18s,margin .18s}
+.expand-control:hover .control-label,.expand-control:focus-visible .control-label{max-width:140px;opacity:1;margin-left:10px}
+#log-toggle,#log-toggle[aria-expanded="true"]{background:#eee1c5;border-color:#aa9472;color:#69563b}
+#log-toggle:hover:not(:disabled){background:#f5ebd7;border-color:#907855}
+.log-panel{left:auto;right:4%}
+.scoreboard{max-width:1500px;gap:14px}
+.scoreboard .players{gap:12px;padding:0;align-items:stretch}
+.scoreboard .player{flex:1 1 0;min-width:0;padding:48px 18px 24px;max-width:310px}
+.scoreboard .player strong{font-size:12px}
+.scoreboard .collection{gap:4px;align-content:center}
+.collection span{white-space:nowrap;border:1px solid transparent}
+.scoreboard .collection span{font-size:9px;padding:3px 4px}
+.collection .chip-missing{background:#e0e5e8;border-color:#aebbc3;color:#627482;opacity:.6}
+.collection .chip-trio{border-color:#408450;box-shadow:0 0 4px 2px #69b87599}
+.breakpoints{align-items:flex-start}
+.breakpoints .flock-ready{width:max-content;min-width:0}
+.hand-cards>.hand-group{--hand-card-width:112px;padding-top:30px}
+.fresh-badge{top:5px;left:auto;right:calc(3px + var(--hand-card-width)/2);transform:translateX(50%);white-space:nowrap}
+@media(max-width:1000px){.scoreboard{flex-wrap:wrap}.scoreboard .players{flex:1 1 100%;flex-wrap:wrap}.scoreboard .player{flex:1 1 180px;max-width:310px}.deck-state{flex-direction:row;max-width:none;gap:18px}}
+@media(max-width:650px){.scoreboard .players{gap:18px 8px}.scoreboard .player{flex:1 1 155px;padding:45px 14px 24px}.hand-cards>.hand-group{--hand-card-width:94px}.log-panel{left:auto;right:12px}.header-controls{gap:6px}}
+@media(prefers-reduced-motion:reduce){.control-label{transition:none}}
+/* Capture preview and hand toolbar: decoration never changes card geometry. */
+.row>button{width:34px;height:34px;flex-basis:34px;padding:5px}
+.card.capture-preview::after{content:'';position:absolute;inset:2px;border:2px dashed #427866;border-radius:inherit;pointer-events:none;z-index:4;background:#c6e7bd26}
+.hand-heading{align-items:flex-start;flex-direction:column;gap:10px;margin-top:16px;margin-bottom:12px}
+.hand-heading .actions{justify-content:flex-start}
+#pass{background:#eee1c5;border-color:#aa9472;color:#69563b}
+#pass:hover:not(:disabled){background:#f5ebd7;border-color:#907855}
+.hand-label{text-align:left}
+.hand-label h2{margin:0 0 6px}
+.hand-label .eyebrow{margin:0;font-size:10px;letter-spacing:1px}
+.hand-cards>.hand-group{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.hand-cards>.hand-group::-webkit-scrollbar{display:none}
+.hand-cards>.group-selected{transform:none}
+.scoreboard .player{min-height:0;padding-top:39px;padding-bottom:18px}
+.scoreboard .player small{margin-top:5px}
+.scoreboard .collection{margin-top:7px;gap:3px}
+@media(max-width:650px){.row>button{width:28px;height:28px;flex-basis:28px;padding:3px}.scoreboard .player{padding-top:37px;padding-bottom:18px}.hand-heading{gap:9px}.hand-label h2{font-size:18px}}
+/* Keep labels and actions within compact horizontal bands. */
+.hand-label{display:flex;align-items:baseline;gap:14px;flex-wrap:nowrap}
+.hand-label h2{margin:0;white-space:nowrap}
+.hand-label .eyebrow{letter-spacing:.5px;white-space:nowrap}
+.hand{padding-top:12px}
+.hand-cards{padding-top:0;padding-bottom:4px;row-gap:8px}
+.hand-cards>.hand-group{padding-top:24px}
+.fresh-badge{top:2px}
+.hand-heading{flex-direction:row;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;margin-bottom:9px}
+.hand-heading .turn{flex:1;min-width:0}
+.hand-heading .actions{margin-left:auto;justify-content:flex-end;flex:0 1 auto;max-width:50%}
+.scoreboard .player-name{display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.25}
+.player-name .own-name{background:#e8f5e4;outline:1px dashed #9abb91;border-radius:2px;padding:2px 4px}
+.host-star{width:13px;height:13px;flex-shrink:0;color:#b28a35;shape-rendering:crispEdges}
+.player.active::after{top:0;padding:4px 9px;font-size:10px}
+.scoreboard{margin-top:8px;margin-bottom:12px}
+.scoreboard .player{padding-top:32px;padding-bottom:15px}
+@media(max-width:650px){.hand-label{gap:9px}.hand-label h2{font-size:16px}.hand-label .eyebrow{font-size:8px;letter-spacing:0}.hand-heading{gap:10px}.hand-heading .actions{gap:5px}.hand-heading .actions button{font-size:10px;padding:7px 8px}.scoreboard .player{padding-top:31px;padding-bottom:15px}}
+#scoreboard-toggle.expand-control{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:47px;height:47px;padding:10px;background:#f6e5a3;border-color:#b7a05a;color:#705d26;font-size:12px}
+#scoreboard-toggle:hover:not(:disabled){background:#fff0bb;border-color:#9e853c}
+#scoreboard-toggle .control-label{max-width:0}
+#scoreboard-toggle:hover .control-label,#scoreboard-toggle:focus-visible .control-label{max-width:180px}
+#table-scoreboard li{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#table-scoreboard li span{overflow-wrap:anywhere}
+#table-scoreboard li strong{white-space:nowrap;color:#705d26}
+.rematch-host{background:#c6e7bd;border-color:#408450;color:#254f34;box-shadow:0 0 4px 2px #69b87599}
+.rematch-host:hover:not(:disabled){background:#d8efcf;border-color:#408450}
+.rematch-propose{background:#eee1c5;border-color:#aa9472;color:#69563b}
+.rematch-badge{position:absolute;top:0;left:50%;transform:translateX(-50%);background:#eee1c5;border:2px solid #aa9472;border-radius:3px;color:#69563b;padding:4px 7px;font-size:9px;white-space:nowrap}
+#sound-toggle,#sound-toggle:hover:not(:disabled){display:grid;place-items:center;width:34px;height:40px;flex:0 0 34px;padding:5px;background:transparent;border:0;box-shadow:none;color:#42637a}
+#sound-toggle svg{width:24px;height:24px;shape-rendering:crispEdges}

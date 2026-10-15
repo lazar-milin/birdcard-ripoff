@@ -3,6 +3,7 @@
 // Events from the server say where cards that appear or vanish came from or went.
 import { html, render } from "../vendor/preact.js";
 import { Card } from "./ui.js";
+import { changedEvents } from "./events.js";
 
 const DURATION = 420;
 const STEP = 280; // delay between consecutive events, such as a lay and its capture
@@ -49,6 +50,7 @@ export function play(prev, next) {
   const pg = prev?.game,
     ng = next?.game;
   if (!pg || !ng || pg.id !== ng.id || prev.code !== next.code) return;
+  const events = changedEvents(prev, next);
   const events = ng.events.filter((e) => e.seq > pg.seq);
   // Nothing new, or too much missed to animate faithfully.
   if (!events.length || events[0].seq !== pg.seq + 1) return;

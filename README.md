@@ -68,3 +68,21 @@ Use Leave room in the header at any time, then enter a generated room code on th
 - The last player to leave a lobby or a finished table closes it, and its code stops working.
 
 The top card in each hand stack highlights the best achievable flock threshold with a light-green square: the small threshold when the small flock is available, or the big threshold when the big flock is available. This indicates hand size, while turn rules still determine when a flock may be completed.
+
+## Quiet sound cues
+
+Five short interface cues (lay, capture, flock, your turn, game over) use Kenney's
+[Interface Sounds](https://kenney.nl/assets/interface-sounds), licensed CC0.
+The original license is in `public/audio/LICENSE.txt`. Files map respectively to
+click_001, drop_001, confirmation_001, select_001 and confirmation_004.
+No official CuBirds audio is included. Playback is peak-normalized, limited to
+0.45 seconds per cue and attenuated to 12% peak through Web Audio.
+
+Sound defaults to muted; the header music note saves your choice in localStorage
+and synchronizes it across tabs. Click or press a key inside the app to unlock
+AudioContext (including when embedded). Sound and animation use the same event
+diff, but sound runs on state receipt, independent of animation frames and page
+visibility, so your-turn notifications work in a background tab. Refreshes and
+reconnections do not replay old history. A browser/OS that freezes a tab or
+suspends audio can still prevent timely notifications; sounds are not queued for
+later replay. Live Discord client playback requires an in-client playtest.

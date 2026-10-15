@@ -138,3 +138,45 @@ test("random joins, leaves, starts and moves never break the room rules", () => 
     }
   }
 });
+
+test("table wins accumulate once, survive rematches and keep departed winners", () => {
+  let room = start(lobby("a", "b"), "a");
+  const win = () => {
+    room.game.turn = 0;
+    room.game.phase = "flock";
+    room.game.players[0].collection = SPECIES.slice(0, 7).map(s => `${s.id}-1`);
+    room = play(room, "a", { type: "pass" });
+  };
+  win();
+  assert.equal(room.standings[0].wins, 1);
+  assert.throws(() => play(room, "a", { type: "pass" }), /finished/);
+  room = start(room, "a");
+  win();
+  assert.equal(room.standings[0].wins, 2);
+  room = leave(room, "a").room;
+  assert.equal(room.standings[0].name, "A");
+  assert.equal(room.standings[0].wins, 2);
+});
+
+test("shared victories credit every winner", () => {
+  let room = start(lobby("a", "b"), "a");
+  room.game.phase = "flock";
+  room.game.deck = []; room.game.discard = [];
+  for (const p of room.game.players) { p.hand = []; p.collection = ["owl-1"]; }
+  room = play(room, room.game.players[room.game.turn].id, { type: "pass" });
+  assert.deepEqual(room.standings.map(p => p.wins), [1, 1]);
+});
+
+test("rematch requests are restricted, idempotent and cleared by rematch", async () => {
+  const { proposeRematch } = await import("./rooms.mjs");
+  let room = start(lobby("a", "b"), "a");
+  assert.throws(() => proposeRematch(room, "b"), /Finish/);
+  room = finish(room);
+  assert.throws(() => proposeRematch(room, "a"), /host/);
+  assert.throws(() => proposeRematch(room, "outsider"), /Join/);
+  room = proposeRematch(room, "b");
+  assert.equal(room.players[1].wantsRematch, true);
+  assert.equal(proposeRematch(room, "b"), room);
+  room = start(room, "a");
+  assert(room.players.every(p => !p.wantsRematch));
+});

@@ -33,6 +33,7 @@ function snapshot(room, id) {
   return {
     code: room.code,
     host: room.host,
+    standings: room.standings ?? [],
     version: room.version,
     players: room.players,
     game: room.game ? view(room.game, id) : null,
@@ -199,6 +200,7 @@ export const server = http.createServer(async (req, res) => {
       const room = roomFor(s);
       if (b.version !== room.version) return json(res, 409, { error: "The table changed. Please try again." });
       if (url.pathname === "/api/start") commit(room.code, Rooms.start(room, s.id));
+      else if (url.pathname === "/api/rematch") commit(room.code, Rooms.proposeRematch(room, s.id));
       else if (url.pathname === "/api/move") commit(room.code, Rooms.play(room, s.id, b.action || {}));
       else if (url.pathname === "/api/leave") {
         const { room: next, saved } = Rooms.leave(room, s.id);

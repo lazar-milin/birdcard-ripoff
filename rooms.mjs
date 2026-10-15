@@ -29,6 +29,7 @@ function withHost(room) {
 const settle = (room) => (room.players.length ? withHost(room) : null);
 
 export function createRoom(code, player) {
+  return { code, host: player.id, players: [seat(player)], game: null, standings: [] };
   return { code, host: player.id, players: [seat(player)], game: null };
 }
 
@@ -85,6 +86,25 @@ export function start(room, playerId) {
 
 export function play(room, playerId, action) {
   assert(room.game, "Start the game first.");
+  const game = move(room.game, playerId, action);
+  const standings = (room.standings ?? []).map((p) => ({ ...p }));
+  if (room.game.phase !== "over" && game.phase === "over") {
+    for (const id of game.winners) {
+      const player = game.players.find((p) => p.id === id);
+      const entry = standings.find((p) => p.id === id);
+      if (entry) { entry.wins++; entry.name = player.name; }
+      else standings.push({ ...seat(player), wins: 1 });
+    }
+  }
+  return { ...room, game, standings };
+}
+
+export function proposeRematch(room, playerId) {
+  assert(phase(room) === "finished", "Finish the game before proposing a rematch.");
+  assert(room.players.some((p) => p.id === playerId && !p.away), "Join a table first.");
+  assert(playerId !== room.host, "The host can start the rematch.");
+  if (room.players.find((p) => p.id === playerId).wantsRematch) return room;
+  return { ...room, players: room.players.map((p) => p.id === playerId ? { ...p, wantsRematch: true } : p) };
   return { ...room, game: move(room.game, playerId, action) };
 }
 

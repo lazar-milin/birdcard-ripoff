@@ -1,6 +1,16 @@
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useCallback } from "./vendor/preact.js";
 import { api, session } from "./js/api.js";
 import { capture, play } from "./js/motion.js";
+import { isMuted, toggleSound, subscribeSound, installSoundUnlock, playSounds } from "./js/sound.js";
+import { Header, TableLog, TableScoreboard, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
+
+
+function App() {
+  const [muted, setMuted] = useState(isMuted);
+  useEffect(() => {
+    const unsubscribe = subscribeSound(setMuted), cleanup = installSoundUnlock();
+    return () => { unsubscribe(); cleanup(); };
+  }, []);
 import { Header, TableLog, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
 
@@ -13,6 +23,7 @@ function App() {
   const [bootError, setBootError] = useState("");
   const [selected, setSelected] = useState(null);
   const [logOpen, setLogOpen] = useState(false);
+  const [scoreboardOpen, setScoreboardOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const roomRef = useRef(null);
   const shown = useRef(null);
@@ -22,6 +33,7 @@ function App() {
   const accept = useCallback((next) => {
     const current = roomRef.current;
     if (current && next.code === current.code && next.version <= current.version) return;
+    playSounds(current, next);
     capture();
     roomRef.current = next;
     setRoom(next);
@@ -32,6 +44,7 @@ function App() {
     setRoom(null);
     setSelected(null);
     setLogOpen(false);
+    setScoreboardOpen(false);
     setScreen("entrance");
     setNotice(message);
   }, []);
@@ -176,6 +189,11 @@ function App() {
   }, [screen]);
 
   useEffect(() => {
+    if (!logOpen && !scoreboardOpen) return;
+    const close = (e) => { if (e.key === "Escape") { setLogOpen(false); setScoreboardOpen(false); } };
+    addEventListener("keydown", close);
+    return () => removeEventListener("keydown", close);
+  }, [logOpen, scoreboardOpen]);
     if (!logOpen) return;
     const close = (e) => e.key === "Escape" && setLogOpen(false);
     addEventListener("keydown", close);
@@ -205,6 +223,8 @@ function App() {
   }
 
   return html`
+    <${Header} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+      ${inRoom && scoreboardOpen && html`<${TableScoreboard} room=${room} onClose=${() => setScoreboardOpen(false)} />`}
     <${Header} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => setLogOpen((o) => !o)} onCopy=${copyCode} onLeave=${() => act("leave")}>
       ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} />`}
     <//>
