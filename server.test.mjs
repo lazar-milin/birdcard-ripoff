@@ -139,3 +139,17 @@ test("a long-poll request learns when its table is removed", async () => {
   assert.equal(res.status, 400);
   assert.equal(res.data.error, "Join a table first.");
 });
+
+test("static files: folders are not found, malformed URLs are bad requests, the favicon exists (#22)", async () => {
+  const get = (path) => fetch(new URL(path, base));
+  const folder = await get("/art/");
+  assert.equal(folder.status, 404);
+  assert.deepEqual(await folder.json(), { error: "Not found." });
+  const malformed = await get("/%E0%A4%A");
+  assert.equal(malformed.status, 400);
+  assert.deepEqual(await malformed.json(), { error: "Bad request." });
+  const icon = await get("/favicon.png");
+  assert.equal(icon.status, 200);
+  assert.equal(icon.headers.get("content-type"), "image/png");
+  await icon.arrayBuffer();
+});
