@@ -420,14 +420,18 @@ export function ResetDialog({ open, onClose, onSubmit }) {
   </dialog>`;
 }
 
-export function Entrance({ canReset, nameLocked, initialName, onJoin, onReset }) {
+export function Entrance({ canReset, nameLocked, canClearName, initialName, onJoin, onClearName, onReset }) {
   const [name, setName] = useState(initialName);
+  const nameInput = useRef(null);
   const [code, setCode] = useState("");
   return html`<section class="welcome">
     <h1>Take a seat.<br />Bring your friends.</h1>
     <p>1–5 players</p>
     <div class="entry">
-      <label>Your name<input id="name" maxlength="24" placeholder="Player" disabled=${nameLocked} value=${name} onInput=${(e) => setName(e.currentTarget.value)} /></label>
+      <div class="name-entry"><label for="name">Your name</label><div class="name-input-row">
+        <input id="name" ref=${nameInput} maxlength="24" placeholder="Leave blank for a bird name" disabled=${nameLocked} value=${name} onInput=${(e) => setName(e.currentTarget.value)} />
+        ${canClearName && html`<button id="clear-name" type="button" aria-label="Clear saved name" title="Change name" onClick=${() => { onClearName(); setName(""); setTimeout(() => nameInput.current?.focus(), 0); }}>×</button>`}
+      </div></div>
       <button id="create" class="primary" onClick=${() => onJoin(true, "", name)}>Create a table</button>
       <div class="divider">or join your friends</div>
       <label>Table code<input

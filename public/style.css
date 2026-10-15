@@ -164,3 +164,8 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
  .crowded-scoreboard .player{padding-left:10px;padding-right:10px}
 }
 @media(max-width:1099px){.game-header{flex-wrap:wrap}.game-header .header-left{flex-basis:100%}.game-header .header-controls{width:100%}.game-header+main{padding-top:3px}}
+.name-entry label{display:block;margin-bottom:7px}
+.name-input-row{display:flex;gap:8px;align-items:stretch}
+.name-input-row input{min-width:0;flex:1;margin:0}
+#clear-name{width:47px;flex:0 0 47px;padding:0;background:#efc2bc;border-color:#ae756c;color:#713e37;font-size:23px;line-height:1}
+#clear-name:hover:not(:disabled){background:#f5d4cf;border-color:#925c54}

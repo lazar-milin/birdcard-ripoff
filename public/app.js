@@ -17,6 +17,7 @@ function App() {
   const [notice, setNotice] = useState("");
   const [config, setConfig] = useState(null);
   const [discord, setDiscord] = useState(false);
+  const [guestNameReset, setGuestNameReset] = useState(false);
   const [bootError, setBootError] = useState("");
   const [selected, setSelected] = useState(null);
   const [logOpen, setLogOpen] = useState(false);
@@ -94,6 +95,7 @@ function App() {
       }
       const next = await api("join", { create, code });
       session.set("room", next.code);
+      setGuestNameReset(false);
       roomRef.current = null;
       accept(next);
       setScreen("room");
@@ -103,6 +105,15 @@ function App() {
     } finally {
       busy.current = false;
     }
+  }
+
+  function clearGuestName() {
+    if (discord) return;
+    session.remove("token");
+    session.remove("name");
+    session.remove("room");
+    setGuestNameReset(true);
+    setNotice("");
   }
 
   useEffect(() => {
@@ -243,9 +254,11 @@ function App() {
       ${screen === "entrance" &&
       html`<${Entrance}
         canReset=${config?.canResetRooms}
-        nameLocked=${discord || !!session.get("token")}
+        nameLocked=${discord || (!!session.get("token") && !guestNameReset)}
+        canClearName=${!discord && !!session.get("token")}
         initialName=${session.get("name") ?? ""}
         onJoin=${join}
+        onClearName=${clearGuestName}
         onReset=${() => setResetOpen(true)}
       />`}
       ${inRoom && html`<${Scoreboard} room=${room} />`}

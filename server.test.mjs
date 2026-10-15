@@ -21,6 +21,46 @@ async function api(path, data, token) {
   return { status: res.status, data: await res.json() };
 }
 const login = async (name) => (await api("login", { name })).data;
+test("guest defaults receive a color and an unused bird, while chosen names are kept", async () => {
+  const gameBirds = new Set(["flamingo", "owl", "toucan", "duck", "parrot", "magpie", "warbler", "robin"]);
+  for (const supplied of [undefined, "", "Player", " player "]) {
+    const guest = await login(supplied);
+    const parts = guest.name.split(" ");
+    assert.equal(parts.length, 2);
+    assert.equal(gameBirds.has(parts[1].toLowerCase()), false);
+    assert.notEqual(guest.name.toLowerCase(), "player");
+    const joined = (await api("join", { create: true }, guest.token)).data;
+    assert.equal(joined.players[0].name, guest.name);
+  }
+  assert.equal((await login("Chosen name")).name, "Chosen name");
+});
+test("Discord display names bypass guest name generation", async () => {
+  const fetchOriginal = globalThis.fetch;
+  const clientIdOriginal = process.env.DISCORD_CLIENT_ID;
+  const clientSecretOriginal = process.env.DISCORD_CLIENT_SECRET;
+  process.env.DISCORD_CLIENT_ID = "test-client";
+  process.env.DISCORD_CLIENT_SECRET = "test-secret";
+  globalThis.fetch = (url, options) => {
+    if (String(url).startsWith("https://discord.com/api/oauth2/token"))
+      return Promise.resolve(new Response(JSON.stringify({ access_token: "test-access" }), { status: 200 }));
+    if (String(url).startsWith("https://discord.com/api/v10/users/@me"))
+      return Promise.resolve(new Response(JSON.stringify({ id: "discord-user", username: "Backup", global_name: "Player" }), { status: 200 }));
+    return fetchOriginal(url, options);
+  };
+  try {
+    const result = await api("login", { code: "test-code" });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.name, "Player");
+    const joined = await api("join", { create: true }, result.data.token);
+    assert.equal(joined.data.players[0].name, "Player");
+  } finally {
+    globalThis.fetch = fetchOriginal;
+    if (clientIdOriginal === undefined) delete process.env.DISCORD_CLIENT_ID;
+    else process.env.DISCORD_CLIENT_ID = clientIdOriginal;
+    if (clientSecretOriginal === undefined) delete process.env.DISCORD_CLIENT_SECRET;
+    else process.env.DISCORD_CLIENT_SECRET = clientSecretOriginal;
+  }
+});
 async function table(...names) {
   const people = [];
   for (const name of names) people.push(await login(name));

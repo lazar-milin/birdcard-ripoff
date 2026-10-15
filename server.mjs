@@ -1,5 +1,5 @@
 import http from "node:http";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, extname, sep } from "node:path";
@@ -16,6 +16,14 @@ const waiting = new Map();
 export const config = { longPollMs: 25000 };
 const guests = process.env.ALLOW_GUESTS !== "false" && process.env.NODE_ENV !== "production";
 const key = () => randomBytes(24).toString("hex");
+const guestColors = ["Amber", "Azure", "Coral", "Jade", "Lilac", "Silver", "Saffron", "Indigo"],
+  guestBirds = ["Heron", "Finch", "Sparrow", "Crane", "Wren", "Swift", "Lark", "Egret"];
+const guestName = (input) => {
+  const name = String(input ?? "").trim().slice(0, 24);
+  return !name || /^player$/i.test(name)
+    ? `${guestColors[randomInt(guestColors.length)]} ${guestBirds[randomInt(guestBirds.length)]}`
+    : name;
+};
 const json = (res, status, data) => {
   if (res.writableEnded || res.destroyed) return;
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -158,7 +166,7 @@ export const server = http.createServer(async (req, res) => {
         } else {
           if (!guests) return json(res, 403, { error: "Open this game inside Discord." });
           id = key();
-          name = String(b.name || "Player").trim().slice(0, 24) || "Player";
+          name = guestName(b.name);
         }
         const token = key();
         sessions.set(token, { id, name, created: Date.now(), room: null });
