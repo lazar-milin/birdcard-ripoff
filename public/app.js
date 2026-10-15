@@ -138,6 +138,7 @@ function App() {
           const login = await api("login", { code });
           await sdk.commands.authenticate({ access_token: login.access_token });
           session.set("token", login.token);
+          session.set("name", login.name);
         } else if (!cfg.guests) throw new Error("Open this game inside Discord.");
         if (session.get("token")) {
           try {
@@ -256,6 +257,7 @@ function App() {
         canReset=${config?.canResetRooms}
         nameLocked=${discord || (!!session.get("token") && !guestNameReset)}
         canClearName=${!discord && !!session.get("token")}
+        discord=${discord}
         initialName=${session.get("name") ?? ""}
         onJoin=${join}
         onClearName=${clearGuestName}

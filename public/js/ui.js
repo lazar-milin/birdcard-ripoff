@@ -420,7 +420,7 @@ export function ResetDialog({ open, onClose, onSubmit }) {
   </dialog>`;
 }
 
-export function Entrance({ canReset, nameLocked, canClearName, initialName, onJoin, onClearName, onReset }) {
+export function Entrance({ canReset, nameLocked, canClearName, discord, initialName, onJoin, onClearName, onReset }) {
   const [name, setName] = useState(initialName);
   const nameInput = useRef(null);
   const [code, setCode] = useState("");
@@ -428,10 +428,15 @@ export function Entrance({ canReset, nameLocked, canClearName, initialName, onJo
     <h1>Take a seat.<br />Bring your friends.</h1>
     <p>1–5 players</p>
     <div class="entry">
-      <div class="name-entry"><label for="name">Your name</label><div class="name-input-row">
+      ${discord
+        ? html`<div class="discord-identity" aria-label=${`Signed in as ${name} on Discord`}>
+            <img src="/art/discord-symbol.svg" alt="Discord" width="27" height="20" />
+            <span>${name}</span>
+          </div>`
+        : html`<div class="name-entry"><label for="name">Your name</label><div class="name-input-row">
         <input id="name" ref=${nameInput} maxlength="24" placeholder="Leave blank for a bird name" disabled=${nameLocked} value=${name} onInput=${(e) => setName(e.currentTarget.value)} />
         ${canClearName && html`<button id="clear-name" type="button" aria-label="Clear saved name" title="Change name" onClick=${() => { onClearName(); setName(""); setTimeout(() => nameInput.current?.focus(), 0); }}>×</button>`}
-      </div></div>
+      </div></div>`}
       <button id="create" class="primary" onClick=${() => onJoin(true, "", name)}>Create a table</button>
       <div class="divider">or join your friends</div>
       <label>Table code<input

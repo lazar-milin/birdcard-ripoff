@@ -169,3 +169,5 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .name-input-row input{min-width:0;flex:1;margin:0}
 #clear-name{width:47px;flex:0 0 47px;padding:0;background:#efc2bc;border-color:#ae756c;color:#713e37;font-size:23px;line-height:1}
 #clear-name:hover:not(:disabled){background:#f5d4cf;border-color:#925c54}
+.discord-identity{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:41px;color:#263f59;text-align:left;font-size:14px;overflow-wrap:anywhere}
+.discord-identity img{display:block;width:27px;height:20px;flex:0 0 27px}
