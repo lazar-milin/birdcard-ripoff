@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { server } from "./server.mjs";
+import { server, config } from "./server.mjs";
 import { speciesOf } from "./public/species.js";
 
 let base;
@@ -90,4 +90,52 @@ test("when the host steps away mid-game, a present player becomes host", async (
   const seen = (await api("state", null, e.token)).data;
   assert.equal(seen.host, e.id);
   assert.equal(seen.players.find((p) => p.id === d.id).away, true);
+});
+
+test("a long-poll request returns at once when the table is already newer", async () => {
+  const { people: [a], room } = await table("Fay");
+  const started = Date.now();
+  const res = await api(`state?since=${room.version - 1}`, null, a.token);
+  assert.equal(res.status, 200);
+  assert.equal(res.data.version, room.version);
+  assert(Date.now() - started < 1000);
+});
+
+test("a long-poll request wakes as soon as someone else changes the table (#19)", async () => {
+  const { people: [g], room } = await table("Gus");
+  const h = await login("Hana");
+  const started = Date.now();
+  const pending = api(`state?since=${room.version}`, null, g.token);
+  await new Promise((r) => setTimeout(r, 100));
+  await api("join", { code: room.code }, h.token);
+  const res = await pending;
+  assert.equal(res.status, 200);
+  assert.equal(res.data.version, room.version + 1);
+  assert(res.data.players.some((p) => p.name === "Hana"), "the waiting player sees the newcomer");
+  assert(Date.now() - started < 2000, "it answered on the change, not on the timeout");
+});
+
+test("a long-poll request returns unchanged state when nothing happens", async () => {
+  const saved = config.longPollMs;
+  config.longPollMs = 150;
+  try {
+    const { people: [i], room } = await table("Ida");
+    const started = Date.now();
+    const res = await api(`state?since=${room.version}`, null, i.token);
+    assert.equal(res.status, 200);
+    assert.equal(res.data.version, room.version);
+    assert(Date.now() - started >= 140);
+  } finally {
+    config.longPollMs = saved;
+  }
+});
+
+test("a long-poll request learns when its table is removed", async () => {
+  const { people: [j], room } = await table("Jo");
+  const pending = api(`state?since=${room.version}`, null, j.token);
+  await new Promise((r) => setTimeout(r, 100));
+  await api("reset-rooms", { password: "deletor" });
+  const res = await pending;
+  assert.equal(res.status, 400);
+  assert.equal(res.data.error, "Join a table first.");
 });

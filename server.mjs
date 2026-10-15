@@ -10,9 +10,14 @@ const root = fileURLToPath(new URL("./public/", import.meta.url));
 const rooms = new Map(),
   sessions = new Map(),
   limits = new Map();
+// Long-poll requests waiting for a table to change, by table code.
+const waiting = new Map();
+// How long a long-poll request waits before returning unchanged state. Tests shorten it.
+export const config = { longPollMs: 25000 };
 const guests = process.env.ALLOW_GUESTS !== "false" && process.env.NODE_ENV !== "production";
 const key = () => randomBytes(24).toString("hex");
 const json = (res, status, data) => {
+  if (res.writableEnded || res.destroyed) return;
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
   res.end(JSON.stringify(data));
 };
@@ -47,13 +52,44 @@ function roomFor(s) {
   room.touched = Date.now();
   return room;
 }
-// Stores a room's next state from rooms.mjs and bumps its version. null closes the room.
+// Stores a room's next state from rooms.mjs, bumps its version, and wakes anyone
+// waiting on it. null closes the room.
 function commit(code, next) {
   const prev = rooms.get(code);
   if (next === prev) return prev;
   if (next) rooms.set(code, { ...next, version: (prev?.version ?? 0) + 1, touched: Date.now() });
   else rooms.delete(code);
+  wake(code);
   return rooms.get(code) ?? null;
+}
+// Answers a waiting request with the table as it is now, or tells the client it lost its seat.
+function answer(w) {
+  clearTimeout(w.timer);
+  const room = rooms.get(w.code);
+  if (w.session.room !== w.code || !seated(room, w.session)) return json(w.res, 400, { error: "Join a table first." });
+  json(w.res, 200, snapshot(room, w.session.id));
+}
+function wake(code) {
+  const list = waiting.get(code);
+  if (!list) return;
+  waiting.delete(code);
+  for (const w of list) answer(w);
+}
+// Holds a state request open until the table changes or the wait runs out.
+function wait(res, s, room) {
+  const list = waiting.get(room.code) ?? new Set();
+  waiting.set(room.code, list);
+  const w = { res, session: s, code: room.code };
+  list.add(w);
+  w.timer = setTimeout(() => {
+    list.delete(w);
+    answer(w);
+  }, config.longPollMs);
+  // The client gave up, for example by closing the tab.
+  res.on("close", () => {
+    clearTimeout(w.timer);
+    list.delete(w);
+  });
 }
 // A player can't sit at a second table while their seat holds up an unfinished game.
 function assertFree(s, code) {
@@ -85,8 +121,10 @@ export const server = http.createServer(async (req, res) => {
         const { password } = await body(req);
         if (password !== "deletor") return json(res, 403, { error: "Incorrect password. No rooms were deleted." });
         const deleted = rooms.size;
+        const codes = [...rooms.keys()];
         rooms.clear();
         for (const s of sessions.values()) s.room = null;
+        codes.forEach(wake);
         return json(res, 200, { ok: true, deleted });
       }
       if (req.method === "POST" && url.pathname === "/api/login") {
@@ -127,7 +165,13 @@ export const server = http.createServer(async (req, res) => {
       }
       const s = session(req);
       if (req.method === "GET" && url.pathname === "/api/me") return json(res, 200, { id: s.id, name: s.name });
-      if (req.method === "GET" && url.pathname === "/api/state") return json(res, 200, snapshot(roomFor(s), s.id));
+      if (req.method === "GET" && url.pathname === "/api/state") {
+        const room = roomFor(s);
+        // ?since=<version> waits for anything newer than the version the client has.
+        const since = url.searchParams.get("since");
+        if (since !== null && Number(since) >= room.version) return wait(res, s, room);
+        return json(res, 200, snapshot(room, s.id));
+      }
       if (req.method !== "POST") return json(res, 404, { error: "Not found." });
       const b = await body(req);
       if (url.pathname === "/api/join") {
@@ -187,7 +231,11 @@ export const server = http.createServer(async (req, res) => {
 // Memory-only prototype: idle tables and authentication sessions expire after a day.
 setInterval(() => {
   const cutoff = Date.now() - 86400000;
-  for (const [k, v] of rooms) if (v.touched < cutoff) rooms.delete(k);
+  for (const [k, v] of rooms)
+    if (v.touched < cutoff) {
+      rooms.delete(k);
+      wake(k);
+    }
   for (const [k, v] of sessions) if (v.created < cutoff) sessions.delete(k);
   for (const [k, v] of limits) if (v.time < Date.now() - 120000) limits.delete(k);
 }, 60000).unref();

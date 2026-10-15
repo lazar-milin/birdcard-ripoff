@@ -3,7 +3,6 @@ import { api, session } from "./js/api.js";
 import { capture, play } from "./js/motion.js";
 import { Header, TableLog, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
-const POLL_MS = 1000;
 
 function App() {
   const [screen, setScreen] = useState("boot"); // boot, error, entrance or room
@@ -140,30 +139,36 @@ function App() {
     })();
   }, []);
 
-  // Short polling keeps networking same-origin through Discord's Activity proxy.
-  // Each request waits for the previous one, so responses can't overlap.
+  // Long polling: each request names the version on screen, and the server answers as
+  // soon as the table changes, or with the same state after about 25 seconds. Plain
+  // same-origin HTTP works through Discord's Activity proxy, and with one request at a
+  // time the answers arrive in order. Errors back off from 1 to 10 seconds.
   useEffect(() => {
     if (screen !== "room") return;
     let stopped = false,
-      timer;
+      timer,
+      failures = 0;
     const tick = async () => {
-      const code = roomRef.current?.code;
-      if (code && !busy.current) {
+      const current = roomRef.current;
+      if (current) {
         try {
-          const next = await api("state");
+          const next = await api(`state?since=${current.version}`);
           if (stopped) return;
-          if (roomRef.current?.code === code) accept(next);
+          if (roomRef.current?.code === current.code) accept(next);
+          failures = 0;
           setNotice((n) => (n.startsWith("Connection lost") ? "Reconnected." : n));
         } catch (e) {
           if (stopped) return;
           if (e.message === "Join a table first.")
             return toEntrance("This room was removed. Create a new room or join by code.");
+          failures++;
           setNotice("Connection lost. Retrying… " + e.message);
         }
       }
-      if (!stopped) timer = setTimeout(tick, POLL_MS);
+      const delay = !current ? 500 : failures ? Math.min(1000 * 2 ** (failures - 1), 10000) : 0;
+      if (!stopped) timer = setTimeout(tick, delay);
     };
-    timer = setTimeout(tick, POLL_MS);
+    tick();
     return () => {
       stopped = true;
       clearTimeout(timer);

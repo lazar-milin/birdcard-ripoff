@@ -11,8 +11,8 @@ A browser card game that implements the CuBirds rules for 1–5 players, playabl
 ```sh
 node server.mjs                 # Run locally at http://127.0.0.1:3000 (no npm install needed)
 npm start                       # Same, but loads .env if present (Discord credentials, HOST, PORT)
-node --test                     # Run all tests (game.test.mjs and server.test.mjs)
-node --test game.test.mjs       # Run one test file
+node --test                     # Run all tests
+node --test rooms.test.mjs      # Run one test file (also game.test.mjs, server.test.mjs)
 node --test --test-name-pattern="capture" game.test.mjs   # Run tests whose name matches
 npm install && npm run build    # Regenerate public/discord-sdk.js and public/vendor/preact.js
 node build.mjs preact           # Rebuild only one bundle (targets: discord, preact)
@@ -22,7 +22,7 @@ To playtest multiplayer locally, open the game in two browser tabs. Each tab kee
 
 ## Architecture
 
-Three layers share `public/species.js`: the species table (card counts, small and big flock thresholds, colors, image paths) and `speciesOf()`. Both the engine and the browser import it.
+The engine, server and browser share `public/species.js`: the species table (card counts, small and big flock thresholds, colors, image paths) and `speciesOf()`. Both the engine and the browser import it.
 
 **Cards are ids, not species.** Each of the 110 cards is a string such as `duck-3`; use `speciesOf(card)` to get its species. Players still act by species (`{type:'lay', bird:'duck', ...}` lays every duck in hand).
 
@@ -33,16 +33,23 @@ Three layers share `public/species.js`: the species table (card counts, small an
 - Actions are `{type:'lay', bird, row, side}`, `{type:'draw', take}`, `{type:'flock', bird}`, and `{type:'pass'}`.
 - Every change appends a typed event to `g.events` with an increasing `seq`, capped at the last 80: `start`, `turn`, `lay`, `capture`, `refill`, `draw`, `flock`, `pass`, `round`, `over`. A finished game also has `endReason` (`species`, `pairs` or `redeal`). `view()` strips card ids from other players' `draw` events; all other event data is public. There is no text log on the server.
 
-**Server (`server.mjs`)** is one `node:http` server with all state in memory: `rooms`, `sessions`, and per-IP rate `limits`. Rooms and sessions expire after 24 hours and are lost on restart, so run a single process.
-- It exports `server` and only calls `listen()` when run directly. `server.test.mjs` uses this to listen on an ephemeral port.
-- Every mutating POST must send the room's current `version`. A mismatch returns 409, which is how stale or double-clicked moves are rejected. Each successful change increments `room.version`.
+**Room rules (`rooms.mjs`)** are pure transitions in the same style as the engine: `createRoom`, `join`, `leave`, `start`, `play`. Each returns a new room, returns `null` when the room closes, or throws a player-facing `Error`. `phase(room)` is `lobby`, `playing` or `finished`. The invariants, checked by a randomized test in `rooms.test.mjs`:
+- The host always holds a seat and is present whenever anyone is; leaving or stepping away hands the role to the next present player.
+- Leaving a running game marks the seat `away` and keeps the hand. Leaving a lobby or finished table removes the seat, and the last one out closes the room.
+- Newcomers can sit down in a lobby or at a finished table, never mid-game. A finished game stays on the table until a rematch, which deals in everyone present and drops away seats.
+- `unfinishedSeat()` finds another table where the player holds a seat in a running game; the server uses it to stop that player from sitting elsewhere.
+
+**Server (`server.mjs`)** is one `node:http` server with all state in memory: `rooms`, `sessions`, per-IP rate `limits`, and `waiting` long-poll requests. Rooms and sessions expire after 24 hours and are lost on restart, so run a single process.
+- It exports `server` and `config`, and only calls `listen()` when run directly. `server.test.mjs` listens on an ephemeral port and shortens `config.longPollMs`.
+- It is an adapter over `rooms.mjs`: authenticate, call a transition, then `commit()` stores the result, increments `room.version`, and wakes waiting requests for that room. Route every room change through `commit()`, or long-polling clients won't hear about it.
+- `GET /api/state?since=<version>` answers at once if the room is newer, otherwise holds the request until the next `commit()` or `config.longPollMs` (25 s) passes. A waiter whose seat or room disappeared gets 400 "Join a table first."
+- Every mutating POST must send the room's current `version`. A mismatch returns 409, which is how stale or double-clicked moves are rejected.
 - Clients only ever receive `view()` output through `snapshot()`. Never send raw game state, because it contains every hand and the deck.
 - Login is either a guest name (allowed unless `ALLOW_GUESTS=false` or `NODE_ENV=production`) or a Discord OAuth code exchanged server-side using `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
-- Leaving a running game marks the seat `away` and keeps the hand. Leaving a lobby or a finished game removes the seat and transfers host.
 - `/api/reset-rooms` wipes every room and is only enabled when guests are allowed.
 
 **Client (`public/`)** uses Preact with htm, imported from the committed bundle `public/vendor/preact.js`; there is no JSX build.
-- `app.js` is the root: boot (including the Discord SDK path, detected by a `frame_id` query parameter), session, actions, and polling. It polls `GET /api/state` once per second, one request at a time, and `accept()` drops any response whose `version` is not newer than what is shown. Polling instead of WebSockets keeps traffic same-origin through Discord's Activity proxy.
+- `app.js` is the root: boot (including the Discord SDK path, detected by a `frame_id` query parameter), session, actions, and polling. It long-polls `GET /api/state?since=<version>` one request at a time, backing off after errors, and `accept()` drops any response whose `version` is not newer than what is shown. Plain HTTP instead of WebSockets keeps traffic same-origin through Discord's Activity proxy.
 - `js/ui.js` holds the components. Cards render keyed by id with a `data-card` attribute; players, piles and collection chips carry `data-player`, `data-pile` and `data-chip` so animations can find them.
 - `js/motion.js` animates. `capture()` records every card's position just before new state is applied; `play()` runs in a layout effect after render and flies fixed-position copies of cards from old to new places, using the new events to decide where appearing or vanishing cards come from or go. It does nothing under `prefers-reduced-motion`.
 - `js/text.js` turns events into sentences for the table log and turn panel, returning species as separate parts so they can be shown in their colors.

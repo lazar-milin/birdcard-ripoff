@@ -35,7 +35,7 @@ The Discord adapter is bundled, but a live Discord launch requires your applicat
 
 ## Implemented
 
-Private hands, shared room codes, host start/rematch, 1–5 seats, all-species placement, nearest-match capture, automatic refill on the right, optional two-card draw, one optional flock per turn, reshuffling, round reset, both collection victories, insufficient-redeal victory and ties. The server validates moves and rejects outdated requests. Table state refreshes once per second, and the client ignores any response older than what it already shows.
+Private hands, shared room codes, host start/rematch, 1–5 seats, all-species placement, nearest-match capture, automatic refill on the right, optional two-card draw, one optional flock per turn, reshuffling, round reset, both collection victories, insufficient-redeal victory and ties. The server validates moves and rejects outdated requests. Clients learn about changes by long polling: each request waits until the table changes or about 25 seconds pass, so an idle table costs one request per player every 25 seconds. The client ignores any response older than what it already shows.
 
 Every card has a stable id, and every move records typed events. The client uses them to animate cards between the wires, hands, piles and collections, to mark cards you captured or drew this turn, to write the table log with species in their colors, and to show a results screen with the winning condition.
 
