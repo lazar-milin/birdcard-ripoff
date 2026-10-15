@@ -185,3 +185,19 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .table-cloud:hover:not(:disabled)::before{background:#e8f5e4}
 .table-cloud:disabled{opacity:.6}
 @media(max-width:650px){.table-cloud{width:min(250px,100%)}}
+
+/* Room controls stay in one scrollable row at every viewport width. */
+.table-header{flex-wrap:nowrap;gap:10px}
+.table-header .header-left{flex:0 0 auto;min-width:0}
+.table-header .header-controls{flex:0 1 auto;min-width:0;max-width:100%;width:auto;margin-left:auto;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#8eafc1 transparent}
+.table-header .header-controls>button{flex-shrink:0}
+@media(max-width:1099px){
+  .game-header{flex-wrap:nowrap}
+  .game-header .header-left{flex-basis:auto}
+  .game-header .header-controls{width:auto}
+}
+@media(max-width:500px){
+  .table-header{padding:8px 10px}
+  .table-header .header-left{display:none}
+  .table-header .header-controls{flex:1 1 auto;gap:6px}
+}

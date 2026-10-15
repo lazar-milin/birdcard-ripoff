@@ -53,7 +53,7 @@ const ScrollIcon = html`<svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden
 
 export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, muted = true, onToggleSound, onCopy, onLeave, children }) {
   const g = room?.game;
-  return html`<header class=${g ? `game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}>
+  return html`<header class=${room ? `table-header${g ? ` game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}` : ""}>
     <div class="header-left">
       <b class="brand">BirdCard Rip-off</b>
     </div>
@@ -66,7 +66,7 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
         <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
         <span><span data-pile="deck"><b>${g.deckCount}</b> in deck</span><small data-pile="discard"><b>${g.discardCount}</b> discarded</small></span>
       </button>`}
-      ${room && html`<button id="scoreboard-toggle" class="expand-control" aria-label="Table scoreboard" aria-expanded=${scoreboardOpen} aria-controls="table-scoreboard" onClick=${onToggleScoreboard}><svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v9l-3 3h-1v4h4v3H7v-3h4v-4h-1l-3-3V3zM7 5H3v5l4 3m10-8h4v5l-4 3" fill="none" stroke="currentColor" stroke-width="2" /></svg><span class="control-label">Table scoreboard</span></button>`}
+      ${g && html`<button id="scoreboard-toggle" class="expand-control" aria-label="Table scoreboard" aria-expanded=${scoreboardOpen} aria-controls="table-scoreboard" onClick=${onToggleScoreboard}><svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v9l-3 3h-1v4h4v3H7v-3h4v-4h-1l-3-3V3zM7 5H3v5l4 3m10-8h4v5l-4 3" fill="none" stroke="currentColor" stroke-width="2" /></svg><span class="control-label">Table scoreboard</span></button>`}
       ${room && html`<button id="leave-room" class="expand-control" aria-label="Leave table" onClick=${onLeave}>${LeaveIcon}<span class="control-label">Leave table</span></button>`}
       <button id="help" aria-label="How to play" onClick=${() => document.getElementById("rules").showModal()}>
         <span class="help-icon" aria-hidden="true">?</span><span class="help-label">How to play</span>
