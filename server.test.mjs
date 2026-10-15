@@ -203,4 +203,6 @@ test("open tables list only unstarted lobbies with public codes and counts", asy
   const { people: [solo], room: emptySoon } = await table("Leaving cloud");
   await api("leave", { version: emptySoon.version }, solo.token);
   assert.equal((await api("tables")).data.tables.some((t) => t.code === emptySoon.code), false);
+  const full = await table("Full host", "Seat 2", "Seat 3", "Seat 4", "Seat 5");
+  assert.equal((await api("tables")).data.tables.some((t) => t.code === full.room.code), false);
 });

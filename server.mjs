@@ -126,7 +126,7 @@ export const server = http.createServer(async (req, res) => {
         return json(res, 200, { clientId: process.env.DISCORD_CLIENT_ID || "", guests, canResetRooms: guests });
       if (req.method === "GET" && url.pathname === "/api/tables")
         return json(res, 200, { tables: [...rooms.values()]
-          .filter((room) => !room.game)
+          .filter((room) => !room.game && room.players.length < Rooms.MAX_SEATS)
           .map((room) => ({ code: room.code, players: room.players.length })) });
       if (req.method === "POST" && url.pathname === "/api/reset-rooms") {
         if (!guests) return json(res, 403, { error: "Room reset is only available on the playtest server." });

@@ -427,6 +427,7 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
   const [code, setCode] = useState("");
   const [tables, setTables] = useState(null);
   const [tablesError, setTablesError] = useState(false);
+  const refreshTables = useRef(null);
   useEffect(() => {
     let stopped = false, timer;
     const refresh = async () => {
@@ -436,10 +437,14 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
       } catch {
         if (!stopped) setTablesError(true);
       }
-      if (!stopped) timer = setTimeout(refresh, 5000);
     };
-    refresh();
-    return () => { stopped = true; clearTimeout(timer); };
+    refreshTables.current = refresh;
+    const poll = async () => {
+      await refresh();
+      if (!stopped) timer = setTimeout(poll, 5000);
+    };
+    poll();
+    return () => { stopped = true; clearTimeout(timer); refreshTables.current = null; };
   }, []);
   return html`<section class="welcome">
     <h1>Take a seat.<br />Bring your friends.</h1>
@@ -476,11 +481,11 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
           : tables.length === 0
             ? html`<p>No open tables yet. Create one!</p>`
             : html`<div class="table-clouds">${tables.map((table) => html`<button
-                key=${table.code} class="table-cloud" disabled=${table.players >= 5}
-                aria-label=${`Join table ${table.code}, ${table.players}/5 players${table.players >= 5 ? ", full" : ""}`}
-                onClick=${() => onJoin(false, table.code, name)}>
+                key=${table.code} class="table-cloud"
+                aria-label=${`Join table ${table.code}, ${table.players} of 5 players`}
+                onClick=${async () => { if (!(await onJoin(false, table.code, name))) await refreshTables.current?.(); }}>
                 <strong>Table ${table.code}</strong>
-                <span>${table.players}/5 players${table.players >= 5 ? " · Full" : ""}</span>
+                <span>${table.players}/5 players</span>
               </button>`)}</div>`}
     </section>
     ${canReset && html`<div class="reset-rooms"><button id="delete-rooms" onClick=${onReset}>Delete all rooms</button></div>`}

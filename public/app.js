@@ -85,7 +85,7 @@ function App() {
   }, [screen, room, act]);
 
   async function join(create, code, name) {
-    if (busy.current) return;
+    if (busy.current) return false;
     busy.current = true;
     try {
       if (!session.get("token")) {
@@ -100,8 +100,10 @@ function App() {
       accept(next);
       setScreen("room");
       setNotice("");
+      return true;
     } catch (e) {
       setNotice(e.message);
+      return false;
     } finally {
       busy.current = false;
     }
