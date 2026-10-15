@@ -193,3 +193,14 @@ test("static files: folders are not found, malformed URLs are bad requests, the 
   assert.equal(icon.headers.get("content-type"), "image/png");
   await icon.arrayBuffer();
 });
+
+test("open tables list only unstarted lobbies with public codes and counts", async () => {
+  const { people, room } = await table("Cloud host", "Cloud guest");
+  const listed = (await api("tables")).data.tables.find((t) => t.code === room.code);
+  assert.deepEqual(listed, { code: room.code, players: 2 });
+  await api("start", { version: room.version }, people[0].token);
+  assert.equal((await api("tables")).data.tables.some((t) => t.code === room.code), false);
+  const { people: [solo], room: emptySoon } = await table("Leaving cloud");
+  await api("leave", { version: emptySoon.version }, solo.token);
+  assert.equal((await api("tables")).data.tables.some((t) => t.code === emptySoon.code), false);
+});

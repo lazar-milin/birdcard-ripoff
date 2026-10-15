@@ -2,6 +2,7 @@
 import { html, useState, useEffect, useLayoutEffect, useRef } from "../vendor/preact.js";
 import { SPECIES, SPECIES_BY_ID, speciesOf } from "../species.js";
 import { describe, headline, reasonText, isAction, plural } from "./text.js";
+import { api } from "./api.js";
 
 export function Segments({ parts }) {
   return parts.map((p, i) =>
@@ -424,6 +425,22 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
   const [name, setName] = useState(initialName);
   const nameInput = useRef(null);
   const [code, setCode] = useState("");
+  const [tables, setTables] = useState(null);
+  const [tablesError, setTablesError] = useState(false);
+  useEffect(() => {
+    let stopped = false, timer;
+    const refresh = async () => {
+      try {
+        const result = await api("tables");
+        if (!stopped) { setTables(result.tables); setTablesError(false); }
+      } catch {
+        if (!stopped) setTablesError(true);
+      }
+      if (!stopped) timer = setTimeout(refresh, 5000);
+    };
+    refresh();
+    return () => { stopped = true; clearTimeout(timer); };
+  }, []);
   return html`<section class="welcome">
     <h1>Take a seat.<br />Bring your friends.</h1>
     <p>1–5 players</p>
@@ -450,6 +467,22 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
       /></label>
       <button id="join" onClick=${() => onJoin(false, code, name)}>Join table</button>
     </div>
+    <section class="open-tables" aria-labelledby="open-tables-title">
+      <h2 id="open-tables-title">Open tables</h2>
+      ${tablesError
+        ? html`<p role="status">Couldn't load open tables. Retrying…</p>`
+        : tables === null
+          ? html`<p>Looking for open tables…</p>`
+          : tables.length === 0
+            ? html`<p>No open tables yet. Create one!</p>`
+            : html`<div class="table-clouds">${tables.map((table) => html`<button
+                key=${table.code} class="table-cloud" disabled=${table.players >= 5}
+                aria-label=${`Join table ${table.code}, ${table.players}/5 players${table.players >= 5 ? ", full" : ""}`}
+                onClick=${() => onJoin(false, table.code, name)}>
+                <strong>Table ${table.code}</strong>
+                <span>${table.players}/5 players${table.players >= 5 ? " · Full" : ""}</span>
+              </button>`)}</div>`}
+    </section>
     ${canReset && html`<div class="reset-rooms"><button id="delete-rooms" onClick=${onReset}>Delete all rooms</button></div>`}
   </section>`;
 }

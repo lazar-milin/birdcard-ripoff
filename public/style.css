@@ -171,3 +171,17 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 #clear-name:hover:not(:disabled){background:#f5d4cf;border-color:#925c54}
 .discord-identity{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:41px;color:#263f59;text-align:left;font-size:14px;overflow-wrap:anywhere}
 .discord-identity img{display:block;width:27px;height:20px;flex:0 0 27px}
+/* Joinable lobby clouds on the entrance screen. */
+.open-tables{margin:28px auto 0;max-width:580px}
+.open-tables h2{font-size:18px;margin-bottom:12px}
+.open-tables p{font-size:12px;color:#51728a}
+.table-clouds{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.table-cloud{position:relative;isolation:isolate;width:250px;min-height:112px;padding:36px 16px 22px;border:0;background:transparent;box-shadow:none;filter:drop-shadow(0 4px 0 #83bad54d)}
+.table-cloud::before{content:'';position:absolute;inset:0;z-index:-1;background:#f5fcff;clip-path:polygon(0 44%,5% 44%,5% 28%,15% 28%,15% 13%,30% 13%,30% 0,50% 0,50% 9%,66% 9%,66% 20%,82% 20%,82% 32%,94% 32%,94% 47%,100% 47%,100% 80%,94% 80%,94% 93%,82% 93%,82% 100%,15% 100%,15% 93%,5% 93%,5% 81%,0 81%)}
+.table-cloud strong,.table-cloud span{display:block;white-space:nowrap}
+.table-cloud strong{font-size:13px}
+.table-cloud span{font-size:12px;margin-top:8px;color:#51728a}
+.table-cloud:hover:not(:disabled){background:transparent}
+.table-cloud:hover:not(:disabled)::before{background:#e8f5e4}
+.table-cloud:disabled{opacity:.6}
+@media(max-width:650px){.table-cloud{width:min(250px,100%)}}
