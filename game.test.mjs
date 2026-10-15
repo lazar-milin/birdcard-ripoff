@@ -212,3 +212,17 @@ test("random legal games preserve every card id, keep events ordered, and finish
     assert(["species", "pairs", "redeal"].includes(g.endReason));
   }
 });
+
+test('birdhouse reveals discard totals but not deck species, order or other hands', () => {
+  const g = start(players);
+  g.discard.push(...g.deck.splice(0, 5));
+  const v = view(g, 'a');
+  for (const s of SPECIES) {
+    assert.equal(v.discardSpecies[s.id], g.discard.filter(c => speciesOf(c) === s.id).length);
+  }
+  assert.equal(v.deckSpecies, undefined);
+  assert.equal(v.deckCount, g.deck.length);
+  assert.equal(Object.values(v.discardSpecies).reduce((a,b)=>a+b,0), v.discardCount);
+  assert.equal(v.deck, undefined);
+  assert.equal(v.players[1].hand, undefined);
+});

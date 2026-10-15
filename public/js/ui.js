@@ -50,9 +50,9 @@ const ScrollIcon = html`<svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden
   <path d="M10 10h4m-4 4h4" fill="none" stroke="currentColor" stroke-width="2" />
 </svg>`;
 
-export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, muted = true, onToggleSound, onCopy, onLeave, children }) {
+export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, muted = true, onToggleSound, onCopy, onLeave, children }) {
   const g = room?.game;
-  return html`<header>
+  return html`<header class=${g ? `game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}>
     <div class="header-left">
       <b class="brand">BirdCard Rip-off</b>
     </div>
@@ -61,6 +61,10 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l11-2v12M9 9l11-2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h6v5H3zm11-2h6v5h-6z" fill="currentColor"/>${muted && html`<path d="M3 3l18 18" stroke="#ba4949" stroke-width="3" />`}</svg>
       </button>
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
+      ${g && html`<button id="birdhouse" aria-label="Deck and discards" aria-expanded=${deckOpen} aria-controls="deck-panel" onClick=${onToggleDeck}>
+        <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
+        <span><span data-pile="deck"><b>${g.deckCount}</b> in deck</span><small data-pile="discard"><b>${g.discardCount}</b> discarded</small></span>
+      </button>`}
       ${room && html`<button id="scoreboard-toggle" class="expand-control" aria-label="Table scoreboard" aria-expanded=${scoreboardOpen} aria-controls="table-scoreboard" onClick=${onToggleScoreboard}><svg class="scroll-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v9l-3 3h-1v4h4v3H7v-3h4v-4h-1l-3-3V3zM7 5H3v5l4 3m10-8h4v5l-4 3" fill="none" stroke="currentColor" stroke-width="2" /></svg><span class="control-label">Table scoreboard</span></button>`}
       ${room && html`<button id="leave-room" class="expand-control" aria-label="Leave table" onClick=${onLeave}>${LeaveIcon}<span class="control-label">Leave table</span></button>`}
       <button id="help" aria-label="How to play" onClick=${() => document.getElementById("rules").showModal()}>
@@ -97,12 +101,22 @@ function RematchButton({ room, act }) {
   return html`<button id=${host ? "start" : "propose-rematch"} class=${host ? "rematch-host" : "rematch-propose"} disabled=${!host && proposed} onClick=${() => act(host ? "start" : "rematch")}>${host ? "Rematch" : proposed ? "Rematch proposed" : "Propose rematch"}</button>`;
 }
 
+export function DeckPanel({ game, onClose }) {
+  return html`<section id="deck-panel" class="log-panel" aria-label="Deck and discards">
+    <div class="log-head"><h2>Birdhouse</h2><button onClick=${onClose}>Close</button></div>
+    <p class="deck-summary">${game.deckCount === 1 ? "There is 1 card" : `There are ${game.deckCount} cards`} left in the deck.</p>
+    <div class="pile-section species-totals"><h3>Total birds in the game</h3><ol>${SPECIES.map((s) => html`<li key=${s.id}><span class="sp" style=${"--bird:" + s.color}>${s.name}</span><b>${s.count}</b></li>`)}</ol></div>
+    <div class="pile-section"><h3>Discarded <small>(${game.discardCount})</small></h3><ol>${SPECIES.map((s) => html`<li key=${s.id} class=${game.discardSpecies?.[s.id] ? "" : "empty-species"}><span class="sp" style=${"--bird:" + s.color}>${s.name}</span><b>${game.discardSpecies?.[s.id] ?? 0}</b></li>`)}</ol></div>
+  </section>`;
+}
+
 export function Scoreboard({ room }) {
   const g = room.game;
-  return html`<div class="scoreboard">
+  return html`<div class=${`scoreboard${g ? " game-scoreboard" : ""}${g && room.players.length >= 3 ? " crowded-scoreboard" : ""}`}>
     <div class="players">
       ${room.players.map((p) => {
         const gp = g?.players.find((x) => x.id === p.id);
+        const speciesCount = new Set((gp?.collection ?? []).map(speciesOf)).size;
         const active = g && g.phase !== "over" && g.players[g.turn].id === p.id;
         return html`<section key=${p.id} class=${active ? "player active" : "player"} data-player=${p.id}>
           ${g?.phase === "over" && p.wantsRematch && html`<span class="rematch-badge">WANTS A REMATCH</span>`}
@@ -110,15 +124,11 @@ export function Scoreboard({ room }) {
             ${p.id === room.host && html`<svg class="host-star" viewBox="0 0 16 16" role="img" aria-label="Host"><path d="M6 0h4v4h2v2h4v4h-4v2h2v4h-4v-2H6v2H2v-4h2v-2H0V6h4V4h2z" fill="currentColor" /></svg>`}
             <span class=${p.id === room.you ? "own-name" : ""} aria-label=${p.id === room.you ? `${p.name}, you` : undefined}>${p.name}</span>${p.away ? " · away" : ""}
           </strong>
-          <small>${gp ? `${gp.handCount} in hand · ${new Set(gp.collection.map(speciesOf)).size}/7 species` : "Ready to play"}</small>
+          <small>${gp ? html`<span class=${`hand-count${gp.handCount === 4 ? " hand-count-yellow" : gp.handCount === 2 || gp.handCount === 3 ? " hand-count-orange" : gp.handCount === 1 ? " hand-count-red" : ""}`}>${gp.handCount} in hand</span> · <span class=${`species-count${speciesCount >= 7 ? " species-count-complete" : speciesCount === 6 ? " species-count-close" : ""}`}>${speciesCount}/7 species</span>` : "Ready to play"}</small>
           <${Chips} player=${p.id} collection=${gp?.collection ?? []} showMissing=${true} />
         </section>`;
       })}
     </div>
-    ${g && html`<aside class="deck-state" aria-label="Deck state">
-      <span data-pile="deck"><b>${g.deckCount}</b> in deck</span>
-      <span data-pile="discard"><b>${g.discardCount}</b> discarded</span>
-    </aside>`}
   </div>`;
 }
 
@@ -288,14 +298,14 @@ export function Table({ room, ctx, selected, onSelect, act }) {
   if (mine && game.phase === "draw")
     actions.push(
       html`<button id="draw" class="primary" onClick=${() => act("move", { type: "draw", take: true })}>Draw two</button>`,
-      html`<button id="skipdraw" onClick=${() => act("move", { type: "draw", take: false })}>Skip draw</button>`,
+      html`<button id="skipdraw" class=${hand.length ? "" : "new-round"} onClick=${() => act("move", { type: "draw", take: false })}>${hand.length ? "Skip draw" : "Start a new round"}</button>`,
     );
   if (mine && game.phase === "flock")
     actions.push(
       html`<button id="flock" class="primary" disabled=${!s || count < s.small} onClick=${() => act("move", { type: "flock", bird: selected })}>
         Complete ${s ? s.name + " " : ""}flock${s && count >= s.small ? ` · keep ${count >= s.big ? 2 : 1}` : ""}
       </button>`,
-      html`<button id="pass" onClick=${() => act("move", { type: "pass" })}>End turn</button>`,
+      html`<button id="pass" class=${hand.length ? "" : "new-round"} onClick=${() => act("move", { type: "pass" })}>${hand.length ? "End turn" : "Start a new round"}</button>`,
     );
   if (over) {
     if (!showResults) actions.push(html`<button id="results" onClick=${() => setShowResults(true)}>Show results</button>`);

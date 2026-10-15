@@ -1,8 +1,9 @@
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useCallback } from "./vendor/preact.js";
 import { api, session } from "./js/api.js";
+import { shouldAutoEnd } from "./js/auto-turn.js";
 import { capture, play } from "./js/motion.js";
 import { isMuted, toggleSound, subscribeSound, installSoundUnlock, playSounds } from "./js/sound.js";
-import { Header, TableLog, TableScoreboard, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
+import { Header, TableLog, TableScoreboard, DeckPanel, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [logOpen, setLogOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
+  const [deckOpen, setDeckOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const roomRef = useRef(null);
   const shown = useRef(null);
@@ -41,6 +43,7 @@ function App() {
     setSelected(null);
     setLogOpen(false);
     setScoreboardOpen(false);
+    setDeckOpen(false);
     setScreen("entrance");
     setNotice(message);
   }, []);
@@ -50,7 +53,7 @@ function App() {
     shown.current = room;
   }, [room]);
 
-  const act = useCallback(async (path, action) => {
+  const act = useCallback(async (path, action, successNotice = "") => {
     if (busy.current || !roomRef.current) return;
     busy.current = true;
     try {
@@ -60,7 +63,7 @@ function App() {
         toEntrance(result.saved ? `Left room ${result.code}. Your seat is saved; rejoin with this code.` : "You left the room.");
       else {
         accept(result);
-        setNotice("");
+        setNotice(successNotice);
       }
     } catch (e) {
       setNotice(e.message);
@@ -69,6 +72,16 @@ function App() {
       busy.current = false;
     }
   }, []);
+
+  useEffect(() => {
+    if (screen !== "room" || !shouldAutoEnd(room)) return;
+    const timer = setTimeout(() => {
+      // A manual move, room switch, or newer state invalidates this timer.
+      if (roomRef.current !== room || !shouldAutoEnd(roomRef.current)) return;
+      act("move", { type: "pass" }, "Turn ended cause of no viable moves!");
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [screen, room, act]);
 
   async function join(create, code, name) {
     if (busy.current) return;
@@ -185,11 +198,11 @@ function App() {
   }, [screen]);
 
   useEffect(() => {
-    if (!logOpen && !scoreboardOpen) return;
-    const close = (e) => { if (e.key === "Escape") { setLogOpen(false); setScoreboardOpen(false); } };
+    if (!logOpen && !scoreboardOpen && !deckOpen) return;
+    const close = (e) => { if (e.key === "Escape") { setLogOpen(false); setScoreboardOpen(false); setDeckOpen(false); } };
     addEventListener("keydown", close);
     return () => removeEventListener("keydown", close);
-  }, [logOpen, scoreboardOpen]);
+  }, [logOpen, scoreboardOpen, deckOpen]);
 
   const inRoom = screen === "room" && room;
   const ctx = room && {
@@ -214,7 +227,8 @@ function App() {
   }
 
   return html`
-    <${Header} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+    <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+      ${inRoom && room.game && deckOpen && html`<${DeckPanel} game=${room.game} onClose=${() => setDeckOpen(false)} />`}
       ${inRoom && scoreboardOpen && html`<${TableScoreboard} room=${room} onClose=${() => setScoreboardOpen(false)} />`}
       ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} />`}
     <//>

@@ -234,5 +234,6 @@ export function view(g, id) {
     endReason: g.endReason,
     deckCount: g.deck.length,
     discardCount: g.discard.length,
+    discardSpecies: counts(g.discard),
   };
 }

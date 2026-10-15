@@ -14,7 +14,7 @@ const quiet = () =>
   document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches;
 const one = (selector) => document.querySelector(selector);
 const playerEl = (id) => one(`#app [data-player="${CSS.escape(id)}"]`);
-const pileEl = (name) => one(`#app [data-pile="${name}"]`);
+const pileEl = (name) => one(`[data-pile="${name}"]`);
 const chipEl = (id, species) =>
   one(`#app [data-chip="${CSS.escape(id + ":" + species)}"]`) ?? playerEl(id);
 const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });

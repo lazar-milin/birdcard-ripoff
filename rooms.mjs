@@ -30,7 +30,6 @@ const settle = (room) => (room.players.length ? withHost(room) : null);
 
 export function createRoom(code, player) {
   return { code, host: player.id, players: [seat(player)], game: null, standings: [] };
-  return { code, host: player.id, players: [seat(player)], game: null };
 }
 
 // Returns the same room when nothing changes, such as a present player joining again.
@@ -105,7 +104,6 @@ export function proposeRematch(room, playerId) {
   assert(playerId !== room.host, "The host can start the rematch.");
   if (room.players.find((p) => p.id === playerId).wantsRematch) return room;
   return { ...room, players: room.players.map((p) => p.id === playerId ? { ...p, wantsRematch: true } : p) };
-  return { ...room, game: move(room.game, playerId, action) };
 }
 
 // The code of another table where this player holds a seat in an unfinished game.
