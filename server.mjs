@@ -227,7 +227,10 @@ export const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "Content-Type": types[extname(path)] || "application/octet-stream", "Cache-Control": "no-cache" });
     res.end(data);
   } catch (e) {
-    json(res, e.code === "ENOENT" ? 404 : 400, { error: e.code === "ENOENT" ? "Not found." : e.message });
+    // A missing file or a folder is "Not found."; a malformed URL is a bad request.
+    // Neither leaks Node's own error text.
+    const missing = e.code === "ENOENT" || e.code === "EISDIR";
+    json(res, missing ? 404 : 400, { error: missing ? "Not found." : e instanceof URIError ? "Bad request." : e.message });
   }
 });
 // Memory-only prototype: idle tables and authentication sessions expire after a day.
