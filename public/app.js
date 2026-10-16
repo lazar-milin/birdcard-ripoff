@@ -8,6 +8,13 @@ import { capture, play } from "./js/motion.js";
 import { isMuted, toggleSound, subscribeSound, installSoundUnlock, playSounds } from "./js/sound.js";
 import { Header, TimerPanel, TableLog, TableScoreboard, DeckPanel, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
+const PENGUIN_CYCLE = [
+  ["/art/penguin-neutral.png", 200],
+  ["/art/penguin-right.png", 300],
+  ["/art/penguin-neutral.png", 200],
+  ["/art/penguin-left.png", 300],
+];
+const PENGUIN_SEQUENCE = Array.from({ length: 4 }, () => PENGUIN_CYCLE).flat();
 
 function App() {
   const [muted, setMuted] = useState(isMuted);
@@ -18,6 +25,9 @@ function App() {
   const [screen, setScreen] = useState("boot"); // boot, error, entrance or room
   const [room, setRoom] = useState(null);
   const [notice, setNotice] = useState("");
+  const [sixSevenQueue, setSixSevenQueue] = useState([]);
+  const [sixSeven, setSixSeven] = useState(null);
+  const [penguinFrame, setPenguinFrame] = useState(0);
   const [config, setConfig] = useState(null);
   const [discord, setDiscord] = useState(false);
   const [guestNameReset, setGuestNameReset] = useState(false);
@@ -36,8 +46,14 @@ function App() {
   const accept = useCallback((next) => {
     const current = roomRef.current;
     if (current && next.code === current.code && next.version <= current.version) return;
-    if (changedEvents(current, next).some((e) => e.timeout && e.player === next.you))
+    const events = changedEvents(current, next);
+    if (events.some((e) => e.timeout && e.player === next.you))
       setNotice("Turn ended because time ran out. A move was made for you.");
+    const celebrations = events.filter((e) => e.type === "flock" && e.sixSeven).map((e) => ({
+      key: `${next.game.id}:${e.seq}`,
+      name: (next.players.find((p) => p.id === e.player) ?? next.game.players.find((p) => p.id === e.player))?.name ?? "A player",
+    }));
+    if (celebrations.length) setSixSevenQueue((queue) => [...queue, ...celebrations]);
     playSounds(current, next);
     capture();
     roomRef.current = next;
@@ -45,6 +61,8 @@ function App() {
   }, []);
   const toEntrance = useCallback((message = "") => {
     roomRef.current = null;
+    setSixSevenQueue([]);
+    setSixSeven(null);
     session.remove("room");
     setRoom(null);
     setSelected(null);
@@ -55,6 +73,33 @@ function App() {
     setScreen("entrance");
     setNotice(message);
   }, []);
+
+  useEffect(() => {
+    for (const src of new Set(PENGUIN_SEQUENCE.map(([path]) => path))) {
+      const image = new Image();
+      image.src = src;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sixSeven || !sixSevenQueue.length) return;
+    setSixSeven(sixSevenQueue[0]);
+    setSixSevenQueue((queue) => queue.slice(1));
+  }, [sixSeven, sixSevenQueue]);
+
+  useEffect(() => {
+    if (!sixSeven) return;
+    setPenguinFrame(0);
+    const timers = [];
+    let elapsed = 0;
+    for (let i = 1; i < PENGUIN_SEQUENCE.length; i++) {
+      elapsed += PENGUIN_SEQUENCE[i - 1][1];
+      timers.push(setTimeout(() => setPenguinFrame(i), elapsed));
+    }
+    elapsed += PENGUIN_SEQUENCE.at(-1)[1];
+    timers.push(setTimeout(() => setSixSeven(null), elapsed));
+    return () => timers.forEach(clearTimeout);
+  }, [sixSeven]);
 
   useLayoutEffect(() => {
     play(shown.current, room);
@@ -111,6 +156,8 @@ function App() {
       session.set("room", next.code);
       setGuestNameReset(false);
       roomRef.current = null;
+      setSixSevenQueue([]);
+      setSixSeven(null);
       accept(next);
       setScreen("room");
       setNotice("");
@@ -261,6 +308,13 @@ function App() {
     setResetOpen(false);
     toEntrance(`${result.deleted} room${result.deleted === 1 ? "" : "s"} deleted. The server is ready for new rooms.`);
   }
+  function celebratePingu() {
+    setResetOpen(false);
+    setSixSevenQueue((queue) => [...queue, {
+      key: `pingu:${Date.now()}`,
+      name: session.get("name")?.trim() || "Pingu",
+    }]);
+  }
 
   return html`
     <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); setTimerOpen(false); }} timerOpen=${timerOpen} onToggleTimer=${() => { setTimerOpen((o) => !o); setDeckOpen(false); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); setTimerOpen(false); }} onCopy=${copyCode} onSpectate=${() => act("spectate")} onLeave=${() => act("leave")}>
@@ -294,8 +348,12 @@ function App() {
         ? html`<${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />`
         : html`<${Lobby} room=${room} act=${act} />`)}
     </main>
+    ${sixSeven && html`<div id="six-seven-celebration" role="status" aria-live="assertive" aria-atomic="true" key=${sixSeven.key}>
+      <img src=${PENGUIN_SEQUENCE[penguinFrame][0]} alt="" />
+      <strong>${sixSeven.name} six-sevened!!!</strong>
+    </div>`}
     <div id="notice" role="status" aria-live="polite">${notice || null}</div>
-    <${ResetDialog} open=${resetOpen} onClose=${() => setResetOpen(false)} onSubmit=${resetRooms} />
+    <${ResetDialog} open=${resetOpen} onClose=${() => setResetOpen(false)} onSubmit=${resetRooms} onPingu=${celebratePingu} />
   `;
 }
 
