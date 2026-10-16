@@ -283,7 +283,7 @@ function App() {
         onClearName=${clearGuestName}
         onReset=${() => setResetOpen(true)}
       />`}
-      ${inRoom && html`<${Scoreboard} room=${room} onKick=${(playerId) => act("kick", { playerId })} />`}
+      ${inRoom && html`<${Scoreboard} room=${room} onKick=${(playerId) => act("kick", { playerId })} onRemoveBot=${(botId) => act("bot", { remove: true, botId })} />`}
       ${inRoom &&
       (room.game
         ? html`<${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />`

@@ -208,7 +208,7 @@ export function move(state, id, action, { timeout = false } = {}) {
     });
     endTurn(g);
   } else if (action.type === "pass") {
-    assert(g.phase === "flock", "Finish the current step first.");
+    assert(g.phase === "flock" || (g.phase === "lay" && !p.hand.length), "Finish the current step first.");
     emit(g, { type: "pass", player: p.id, ...(timeout ? { timeout: true } : {}) });
     endTurn(g);
   } else throw new Error("Unknown move.");

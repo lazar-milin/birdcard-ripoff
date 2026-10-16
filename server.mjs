@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, extname, sep } from "node:path";
 import { view } from "./game.mjs";
+import { chooseBotAction } from "./bot.mjs";
 import * as Rooms from "./rooms.mjs";
 
 const root = fileURLToPath(new URL("./public/", import.meta.url));
@@ -15,8 +16,9 @@ const rooms = new Map(),
 // Long-poll requests waiting for a table to change, by table code.
 const waiting = new Map();
 const turnTimers = new Map();
+const botTimers = new Map();
 // How long a long-poll request waits before returning unchanged state. Tests shorten it.
-export const config = { longPollMs: 25000, turnSecondMs: 1000 };
+export const config = { longPollMs: 25000, turnSecondMs: 1000, botDelayMs: 2500 };
 const guests = process.env.ALLOW_GUESTS !== "false" && process.env.NODE_ENV !== "production";
 const key = () => randomBytes(24).toString("hex");
 const guestColors = ["Amber", "Azure", "Coral", "Jade", "Lilac", "Silver", "Saffron", "Indigo"],
@@ -27,6 +29,12 @@ const guestName = (input) => {
     ? `${guestColors[randomInt(guestColors.length)]} ${guestBirds[randomInt(guestBirds.length)]}`
     : name;
 };
+function botName(room) {
+  const used = new Set(room.players.map((p) => p.name.toLowerCase()));
+  const available = guestColors.flatMap((color) => guestBirds.map((bird) => `${color} ${bird}`))
+    .filter((name) => !used.has(name.toLowerCase()));
+  return available[randomInt(available.length)];
+}
 const json = (res, status, data) => {
   if (res.writableEnded || res.destroyed) return;
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -76,8 +84,11 @@ function commit(code, next) {
   if (next === prev) return prev;
   clearTimeout(turnTimers.get(code));
   turnTimers.delete(code);
+  clearTimeout(botTimers.get(code));
+  botTimers.delete(code);
   if (next) {
-    const running = next.game && next.game.phase !== "over" && next.timer;
+    const bot = next.game?.phase !== "over" && next.players.find((p) => p.id === next.game?.players[next.game.turn]?.id && p.bot);
+    const running = next.game && next.game.phase !== "over" && next.timer && !bot;
     const restarted = !prev || prev.timer !== next.timer ||
       prev.game?.id !== next.game?.id || prev.game?.seq !== next.game?.seq;
     const deadline = running
@@ -92,6 +103,18 @@ function commit(code, next) {
       }, Math.max(0, deadline - Date.now()));
       timer.unref();
       turnTimers.set(code, timer);
+    }
+    if (bot) {
+      const scheduled = rooms.get(code);
+      const timer = setTimeout(() => {
+        botTimers.delete(code);
+        const current = rooms.get(code);
+        if (current !== scheduled) return;
+        const action = chooseBotAction(current.game, bot.id);
+        if (action) commit(code, Rooms.play(current, bot.id, action));
+      }, config.botDelayMs);
+      timer.unref();
+      botTimers.set(code, timer);
     }
   }
   else rooms.delete(code);
@@ -166,6 +189,8 @@ export const server = http.createServer(async (req, res) => {
         const codes = [...rooms.keys()];
         for (const timer of turnTimers.values()) clearTimeout(timer);
         turnTimers.clear();
+        for (const timer of botTimers.values()) clearTimeout(timer);
+        botTimers.clear();
         rooms.clear();
         for (const s of sessions.values()) s.room = null;
         codes.forEach(wake);
@@ -245,6 +270,12 @@ export const server = http.createServer(async (req, res) => {
         commit(room.code, Rooms.timeout(room));
       if (b.version !== room.version) return json(res, 409, { error: "The table changed. Please try again." });
       if (url.pathname === "/api/start") commit(room.code, Rooms.start(room, s.id));
+      else if (url.pathname === "/api/bot") {
+        const next = b.remove
+          ? Rooms.removeBot(room, s.id, b.botId)
+          : Rooms.addBot(room, s.id, { id: `bot-${key()}`, name: botName(room), bot: true });
+        commit(room.code, next);
+      }
       else if (url.pathname === "/api/rematch") commit(room.code, Rooms.proposeRematch(room, s.id));
       else if (url.pathname === "/api/timer") commit(room.code, Rooms.setTimer(room, s.id, b.seconds));
       else if (url.pathname === "/api/kick") commit(room.code, Rooms.kick(room, s.id, b.playerId));
@@ -287,6 +318,8 @@ setInterval(() => {
     if (v.touched < cutoff) {
       clearTimeout(turnTimers.get(k));
       turnTimers.delete(k);
+      clearTimeout(botTimers.get(k));
+      botTimers.delete(k);
       rooms.delete(k);
       wake(k);
     }
@@ -296,6 +329,8 @@ setInterval(() => {
 server.on("close", () => {
   for (const timer of turnTimers.values()) clearTimeout(timer);
   turnTimers.clear();
+  for (const timer of botTimers.values()) clearTimeout(timer);
+  botTimers.clear();
 });
 if (process.argv[1] === fileURLToPath(import.meta.url))
   server.listen(Number(process.env.PORT || 3000), process.env.HOST || "127.0.0.1", () =>
