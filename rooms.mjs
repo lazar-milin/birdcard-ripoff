@@ -11,7 +11,7 @@ export const MAX_SEATS = 5;
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
-const seat = (player) => ({ id: player.id, name: player.name, discord: player.discord === true, timeouts: 0 });
+const seat = (player) => ({ id: player.id, name: player.name, discord: player.discord === true, bot: player.bot === true, timeouts: 0 });
 const present = (room) => room.players.filter((p) => !p.away && !p.kicked);
 
 // "lobby" before the first game, "playing" during one, "finished" after one ends.
@@ -24,12 +24,18 @@ export function phase(room) {
 function withHost(room) {
   const host = room.players.find((p) => p.id === room.host);
   if (host && !host.away && !host.kicked) return room;
-  const next = present(room)[0] ?? room.players.find((p) => !p.kicked);
+  const next = present(room).find((p) => !p.bot) ?? room.players.find((p) => !p.bot && !p.kicked);
+  if (!next) return null;
   return { ...room, host: next.id };
 }
 
 // An empty room closes.
-const settle = (room) => (room.players.some((p) => !p.kicked) ? withHost(room) : null);
+const settle = (room) => {
+  const hasBot = room.players.some((p) => p.bot);
+  const human = room.players.some((p) => !p.bot && !p.kicked &&
+    (!hasBot || !p.away));
+  return human ? withHost(room) : null;
+};
 
 export function createRoom(code, player) {
   return { code, host: player.id, players: [seat(player)], game: null, standings: [], timer: 0, deadline: null };
@@ -37,6 +43,7 @@ export function createRoom(code, player) {
 
 // Returns the same room when nothing changes, such as a present player joining again.
 export function join(room, player) {
+  assert(!player.bot, "Bots are added by the host.");
   const mine = room.players.find((p) => p.id === player.id);
   if (mine) {
     if (mine.kicked) {
@@ -66,16 +73,15 @@ export function leave(room, playerId) {
     room.players.some((p) => p.id === playerId),
     "Join a table first.",
   );
-  if (phase(room) === "playing")
-    return {
-      room: withHost({
+  if (phase(room) === "playing") {
+    const next = settle({
         ...room,
         players: room.players.map((p) =>
           p.id === playerId ? { ...p, away: true } : p,
         ),
-      }),
-      saved: true,
-    };
+      });
+    return { room: next, saved: Boolean(next) };
+  }
   return {
     room: settle({
       ...room,
@@ -83,6 +89,21 @@ export function leave(room, playerId) {
     }),
     saved: false,
   };
+}
+
+export function addBot(room, hostId, bot) {
+  assert(hostId === room.host, "Only the host can add a bot.");
+  assert(phase(room) === "lobby", "Bots can only be added before the game starts.");
+  assert(room.players.length < MAX_SEATS, "This table is full.");
+  assert(bot.bot === true && !room.players.some((p) => p.id === bot.id), "Invalid bot seat.");
+  return { ...room, players: [...room.players, seat(bot)] };
+}
+
+export function removeBot(room, hostId, botId) {
+  assert(hostId === room.host, "Only the host can remove a bot.");
+  assert(phase(room) === "lobby", "Bots can only be removed before the game starts.");
+  assert(room.players.some((p) => p.id === botId && p.bot), "That bot is not seated here.");
+  return { ...room, players: room.players.filter((p) => p.id !== botId) };
 }
 
 // Starts the first game or a rematch with everyone present. Seats of players who

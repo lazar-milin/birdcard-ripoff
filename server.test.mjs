@@ -258,3 +258,45 @@ test("host timer broadcasts, expires a turn, and enables kicking after two timeo
     config.turnSecondMs = oldSecond;
   }
 });
+
+test("host adds and removes bot seats; bot phases broadcast without human timeout", async () => {
+  const oldDelay = config.botDelayMs, oldSecond = config.turnSecondMs;
+  config.botDelayMs = 100;
+  config.turnSecondMs = 1;
+  try {
+    const { people: [host, guest], room: lobby } = await table("Bot host", "Bot guest");
+    assert.equal((await api("bot", { version: lobby.version }, guest.token)).status, 400);
+    let state = (await api("bot", { version: lobby.version }, host.token)).data;
+    const bot = state.players.find((p) => p.bot);
+    assert.match(bot.name, /^[A-Z][a-z]+ [A-Z][a-z]+$/);
+    assert.equal(bot.discord, false);
+    assert.equal((await api("bot", { version: state.version, remove: true, botId: bot.id }, guest.token)).status, 400);
+    state = (await api("bot", { version: state.version, remove: true, botId: bot.id }, host.token)).data;
+    assert.equal(state.players.some((p) => p.bot), false);
+    state = (await api("bot", { version: state.version }, host.token)).data;
+    const playingBot = state.players.find((p) => p.bot);
+    state = (await api("start", { version: state.version }, host.token)).data;
+    assert.equal((await api("bot", { version: state.version }, host.token)).status, 400);
+    for (let i = 0; i < 3 && state.game.players[state.game.turn].id !== playingBot.id; i++) {
+      const actor = state.game.players[state.game.turn];
+      const token = actor.id === host.id ? host.token : guest.token;
+      const own = (await api("state", null, token)).data;
+      state = (await api("move", { version: state.version, action: { type: "lay", bird: speciesOf(own.game.players[own.game.turn].hand[0]), row: 0, side: "left" } }, token)).data;
+      if (state.game.phase === "draw") state = (await api("move", { version: state.version, action: { type: "draw", take: true } }, token)).data;
+      if (state.game.phase === "flock") state = (await api("move", { version: state.version, action: { type: "pass" } }, token)).data;
+    }
+    assert.equal(state.game.players[state.game.turn].bot, true);
+    state = (await api("timer", { version: state.version, seconds: 30 }, host.token)).data;
+    assert.equal(state.deadline, null, "human turn timer must not interrupt a bot");
+    const before = state.game.seq;
+    await new Promise((resolve) => setTimeout(resolve, 35));
+    assert.equal((await api("state", null, host.token)).data.game.seq, before);
+    state = (await api(`state?since=${state.version}`, null, host.token)).data;
+    assert(state.game.seq > before);
+    assert(state.game.events.some((event) => event.seq > before && event.type === "lay" && event.player === playingBot.id));
+    assert.equal(state.players.find((p) => p.bot).timeouts, 0);
+  } finally {
+    config.botDelayMs = oldDelay;
+    config.turnSecondMs = oldSecond;
+  }
+});

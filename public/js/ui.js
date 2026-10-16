@@ -56,6 +56,7 @@ const ClockIcon = html`<svg class="clock-icon" viewBox="0 0 24 24" aria-hidden="
   <path d="M8 2h8v2h4v4h2v8h-2v4h-4v2H8v-2H4v-4H2V8h2V4h4z" fill="none" stroke="currentColor" stroke-width="2" />
   <path d="M11 6h2v7h5v2h-7z" fill="currentColor" />
 </svg>`;
+const BotIcon = html`<svg class="bot-icon" viewBox="0 0 20 20" role="img" aria-label="Bot"><path d="M9 1h2v3h5v2h2v10h-2v2H4v-2H2V6h2V4h5z" fill="currentColor"/><path d="M5 8h3v3H5zm7 0h3v3h-3zM6 14h8v2H6z" fill="#f5fcff"/></svg>`;
 const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
 export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onLeave, children }) {
@@ -131,7 +132,7 @@ export function DeckPanel({ game, onClose }) {
   </section>`;
 }
 
-export function Scoreboard({ room, onKick }) {
+export function Scoreboard({ room, onKick, onRemoveBot }) {
   const g = room.game;
   return html`<div class=${`scoreboard${g ? " game-scoreboard" : ""}${g && room.players.length >= 3 ? " crowded-scoreboard" : ""}`}>
     <div class="players">
@@ -148,7 +149,9 @@ export function Scoreboard({ room, onKick }) {
           <strong class="player-name">
             ${p.id === room.host && html`<svg class="host-star" viewBox="0 0 16 16" role="img" aria-label="Host"><path d="M6 0h4v4h2v2h4v4h-4v2h2v4h-4v-2H6v2H2v-4h2v-2H0V6h4V4h2z" fill="currentColor" /></svg>`}
             ${p.discord && html`<img class="player-discord" src="/art/discord-symbol.svg" alt="Discord" />`}
+            ${p.bot && BotIcon}
             <span class=${p.id === room.you ? "own-name" : ""} aria-label=${p.id === room.you ? `${p.name}, you` : undefined}>${p.name}</span>${p.away ? " · away" : ""}
+            ${!g && room.you === room.host && p.bot && html`<button class="remove-bot" aria-label=${`Remove ${p.name}`} onClick=${() => onRemoveBot(p.id)}>×</button>`}
             ${g && g.phase !== "over" && room.you === room.host && p.id !== room.host && p.timeouts >= 2 && html`<button class="kick-player" aria-label=${`Kick ${p.name}`} onClick=${() => onKick(p.id)}>Kick</button>`}
           </strong>
           <small>${gp ? html`<span class=${`hand-count${gp.handCount === 4 ? " hand-count-yellow" : gp.handCount === 2 || gp.handCount === 3 ? " hand-count-orange" : gp.handCount === 1 ? " hand-count-red" : ""}`}>${gp.handCount} in hand</span> · <span class=${`species-count${speciesCount >= 7 ? " species-count-complete" : speciesCount === 6 ? " species-count-close" : ""}`}>${speciesCount}/7 species</span>` : "Ready to play"}</small>
@@ -521,7 +524,8 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
 export function Lobby({ room, act }) {
   return html`<section class="lobby">
     <h2>${room.players.length}/5 players seated</h2>
-    <p>Start on your own to test, or share the table code with friends.</p>
+    <p>Start on your own to test, add bots, or share the table code with friends.</p>
+    ${room.host === room.you && room.players.length < 5 && html`<button class="add-bot-cloud" aria-label="Add bot" onClick=${() => act("bot")}><span class="pixel-plus" aria-hidden="true"></span><span>Add bot</span></button>`}
     ${room.host === room.you
       ? html`<button id="start" class="primary" onClick=${() => act("start")}>Start game</button>`
       : html`<p>The host will start when everyone is here.</p>`}

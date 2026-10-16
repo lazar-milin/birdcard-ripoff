@@ -231,3 +231,8 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .kicked-player::before{inset:18px 0 22px;background:linear-gradient(#cbd4da 0 62%,#a5b3bd 62%);clip-path:polygon(0 44%,5% 44%,5% 28%,15% 28%,15% 14%,32% 14%,32% 0,58% 0,58% 14%,75% 14%,75% 28%,92% 28%,92% 44%,100% 44%,100% 79%,94% 79%,94% 93%,82% 93%,82% 100%,18% 100%,18% 93%,6% 93%,6% 79%,0 79%)}
 .kicked-player::after{content:'';position:absolute;left:25%;right:25%;bottom:1px;height:17px;background:linear-gradient(#7892a5,#7892a5) 10% 1px/4px 10px no-repeat,linear-gradient(#7892a5,#7892a5) 50% 7px/4px 10px no-repeat,linear-gradient(#7892a5,#7892a5) 90% 1px/4px 10px no-repeat;pointer-events:none}
 .kicked-player .kicked-badge{top:0;padding:2px 0;border:0;background:transparent;color:#516775}
+.bot-icon{width:17px;height:17px;flex:0 0 17px;color:#6b70a2;shape-rendering:crispEdges}
+.remove-bot{padding:1px 5px;margin-left:3px;background:#efc2bc;border-color:#ae756c;color:#713e37;font-size:14px;line-height:1}
+.add-bot-cloud{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:132px;height:77px;margin:8px auto!important;padding:12px 12px 7px;border:0;box-shadow:0 4px 0 #83bad54d;background:#f5fcff;clip-path:polygon(0 44%,6% 44%,6% 25%,18% 25%,18% 10%,35% 10%,35% 0,65% 0,65% 12%,82% 12%,82% 29%,94% 29%,94% 45%,100% 45%,100% 82%,92% 82%,92% 100%,8% 100%,8% 82%,0 82%);font-size:11px}
+.add-bot-cloud .pixel-plus{width:18px;height:18px}
+.add-bot-cloud:hover:not(:disabled){background:#e8f5e4}
