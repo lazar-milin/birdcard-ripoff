@@ -57,9 +57,10 @@ const ClockIcon = html`<svg class="clock-icon" viewBox="0 0 24 24" aria-hidden="
   <path d="M11 6h2v7h5v2h-7z" fill="currentColor" />
 </svg>`;
 const BotIcon = html`<svg class="bot-icon" viewBox="0 0 20 20" role="img" aria-label="Bot"><path d="M9 1h2v3h5v2h2v10h-2v2H4v-2H2V6h2V4h5z" fill="currentColor"/><path d="M5 8h3v3H5zm7 0h3v3h-3zM6 14h8v2H6z" fill="#f5fcff"/></svg>`;
+const BinocularsIcon = html`<svg class="binoculars-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h5v3h2v4h2V8h2V5h5v3h2v11h-9v-4h-2v4H2V8h2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="miter"/><path d="M5 14h3v3H5zm11 0h3v3h-3z" fill="currentColor"/></svg>`;
 const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
-export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onLeave, children }) {
+export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onSpectate, onLeave, children }) {
   const g = room?.game;
   return html`<header class=${room ? `table-header${g ? ` game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}` : ""}>
     <div class="header-left">
@@ -71,6 +72,7 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
       </button>
       ${room && room.you !== room.host && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
+      ${room && room.you !== room.host && room.players.some((p) => p.id === room.you) && html`<button id="spectate-table" class="expand-control" aria-label="Spectate table" onClick=${onSpectate}>${BinocularsIcon}<span class="control-label">Spectate table</span></button>`}
       ${room && room.you === room.host && html`<button id="timer-toggle" aria-label="Turn timer" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}</button>`}
       ${g && html`<button id="birdhouse" aria-label="Deck and discards" aria-expanded=${deckOpen} aria-controls="deck-panel" onClick=${onToggleDeck}>
         <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
@@ -97,13 +99,13 @@ export function TimerPanel({ seconds, onChoose, onClose }) {
   </section>`;
 }
 
-export function TableLog({ game, ctx, onClose }) {
+export function TableLog({ game, ctx, onClose, onListSpectators }) {
   const lines = game.events
     .map((e) => ({ seq: e.seq, parts: e.type === "turn" ? null : describe(e, ctx) }))
     .filter((l) => l.parts)
     .reverse();
   return html`<section id="table-log" class="log-panel" aria-label="Table log">
-    <div class="log-head"><h2>Game Log</h2><button onClick=${onClose}>Close</button></div>
+    <div class="log-head"><h2>Game Log</h2><div class="log-head-actions"><button onClick=${onListSpectators}>List current spectators</button><button onClick=${onClose}>Close</button></div></div>
     <ol>${lines.map((l) => html`<li key=${l.seq}><${Segments} parts=${l.parts} /></li>`)}</ol>
   </section>`;
 }
@@ -121,6 +123,11 @@ function RematchButton({ room, act }) {
   const host = room.you === room.host;
   const proposed = room.players.find((p) => p.id === room.you)?.wantsRematch;
   return html`<button id=${host ? "start" : "propose-rematch"} class=${host ? "rematch-host" : "rematch-propose"} disabled=${!host && proposed} onClick=${() => act(host ? "start" : "rematch")}>${host ? "Rematch" : proposed ? "Rematch proposed" : "Propose rematch"}</button>`;
+}
+
+function ReturnToTable({ room, act }) {
+  const full = room.players.length >= 5;
+  return html`<button class="return-seat-cloud" disabled=${full} aria-label=${full ? "Table full" : "Take a seat"} onClick=${() => act("seat")}><span class="pixel-plus" aria-hidden="true"></span><span>${full ? "Table full" : "Take a seat"}</span></button>`;
 }
 
 export function DeckPanel({ game, onClose }) {
@@ -295,7 +302,8 @@ const PROMPTS = {
 export function Table({ room, ctx, selected, onSelect, act }) {
   const game = room.game;
   const you = room.you;
-  const me = game.players.find((p) => p.id === you);
+  const spectating = room.spectators.some((p) => p.id === you);
+  const me = spectating ? null : game.players.find((p) => p.id === you);
   const over = game.phase === "over";
   const active = game.players[game.turn];
   const mine = !over && active.id === you;
@@ -339,7 +347,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     );
   if (over) {
     if (!showResults) actions.push(html`<button id="results" onClick=${() => setShowResults(true)}>Show results</button>`);
-    if (!showResults) actions.push(html`<${RematchButton} room=${room} act=${act} />`);
+    if (!showResults && !spectating) actions.push(html`<${RematchButton} room=${room} act=${act} />`);
   }
   return html`
     <${Wires} game=${game} mine=${mine} count=${count} selected=${selected} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} />
@@ -358,7 +366,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
       ${over && html`<section class="game-result" role="status">${headline(game, ctx)}</section>`}
       ${actions.length > 0 && html`<div class="actions">${actions}</div>`}
     </div>
-    <section class="hand">
+    ${spectating ? html`<section class="hand spectator-hand"><strong>You are spectating.</strong>${over && html`<${ReturnToTable} room=${room} act=${act} />`}</section>` : html`<section class="hand">
       <div class="hand-label">
         <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
         <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
@@ -366,8 +374,8 @@ export function Table({ room, ctx, selected, onSelect, act }) {
       ${me
         ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
         : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
-    </section>
-    <${VictoryDialog} room=${room} ctx=${ctx} open=${over && showResults} onClose=${() => setShowResults(false)} act=${act} />
+    </section>`}
+    <${VictoryDialog} room=${room} ctx=${ctx} open=${over && showResults} onClose=${() => setShowResults(false)} act=${act} spectating=${spectating} />
   `;
 }
 
@@ -383,7 +391,7 @@ function useDialog(open, onClose) {
   return { ref, onClose };
 }
 
-function VictoryDialog({ room, ctx, open, onClose, act }) {
+function VictoryDialog({ room, ctx, open, onClose, act, spectating }) {
   const game = room.game;
   const dialog = useDialog(open, onClose);
   const standings = [...game.players].sort(
@@ -407,7 +415,7 @@ function VictoryDialog({ room, ctx, open, onClose, act }) {
     </ol>
     <p class="victory-meta">${plural(game.round, "round")} played.</p>
     <div class="actions">
-      ${open && html`<${RematchButton} room=${room} act=${act} />`}
+      ${open && !spectating && html`<${RematchButton} room=${room} act=${act} />`}
       <button onClick=${onClose}>View table</button>
     </div>
   </dialog>`;
@@ -522,13 +530,16 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
 }
 
 export function Lobby({ room, act }) {
+  const spectating = room.spectators.some((p) => p.id === room.you);
   return html`<section class="lobby">
     <h2>${room.players.length}/5 players seated</h2>
     <p>Start on your own to test, add bots, or share the table code with friends.</p>
+    ${spectating && html`<${ReturnToTable} room=${room} act=${act} />`}
     ${room.host === room.you && room.players.length < 5 && html`<button class="add-bot-cloud" aria-label="Add bot" onClick=${() => act("bot")}><span class="pixel-plus" aria-hidden="true"></span><span>Add bot</span></button>`}
     ${room.host === room.you
       ? html`<button id="start" class="primary" onClick=${() => act("start")}>Start game</button>`
       : html`<p>The host will start when everyone is here.</p>`}
     <button id="leave" onClick=${() => act("leave")}>Leave table</button>
+    <p class="spectator-list">Spectators present: ${room.spectators.map((p) => p.name).join(", ") || "none"}</p>
   </section>`;
 }

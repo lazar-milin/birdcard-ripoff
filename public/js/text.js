@@ -34,7 +34,7 @@ export function people(ids, ctx) {
   return names.slice(0, -1).join(", ") + " and " + names.at(-1);
 }
 
-const ACTIONS = new Set(["lay", "capture", "refill", "draw", "flock", "pass", "round", "kick"]);
+const ACTIONS = new Set(["lay", "capture", "refill", "draw", "flock", "pass", "round", "kick", "spectate"]);
 export const isAction = (e) => ACTIONS.has(e.type);
 
 // Returns sentence parts for one event, or null for events the history skips.
@@ -65,6 +65,8 @@ export function describe(e, ctx) {
       return [e.timeout ? `Time ran out for ${who}. ` : "", `${who} ended ${yours ? "your" : "their"} turn.`];
     case "kick":
       return [`${who} was removed from the table; `, ...cardList(e.cards), " went to the discard pile."];
+    case "spectate":
+      return [`${who} moved to the spectator pool; `, ...cardList(e.cards), " went to the discard pile."];
     case "round":
       return [`${who} emptied ${yours ? "your" : "their"} hand. Round ${e.round} begins, and everyone gets eight new cards.`];
     case "over": {

@@ -70,9 +70,12 @@ function App() {
         ...(path === "move" ? { action } : action ?? {}),
       });
       setSelected(null);
-      if (path === "leave")
+      if (path === "leave") {
+        if (roomRef.current.spectators?.some((p) => p.id === roomRef.current.you)) session.set("spectatorCode", roomRef.current.code);
         toEntrance(result.saved ? `Left room ${result.code}. Your seat is saved; rejoin with this code.` : "You left the room.");
-      else {
+      } else {
+        if (path === "spectate") session.set("spectatorCode", result.code);
+        if (path === "seat") session.remove("spectatorCode");
         accept(result);
         setNotice(successNotice);
       }
@@ -103,7 +106,7 @@ function App() {
         session.set("token", login.token);
         session.set("name", login.name);
       }
-      const next = await api("join", { create, code });
+      const next = await api("join", { create, code, spectate: !create && session.get("spectatorCode") === code.trim().toUpperCase() });
       session.set("room", next.code);
       setGuestNameReset(false);
       roomRef.current = null;
@@ -124,6 +127,7 @@ function App() {
     session.remove("token");
     session.remove("name");
     session.remove("room");
+    session.remove("spectatorCode");
     setGuestNameReset(true);
     setNotice("");
   }
@@ -164,7 +168,7 @@ function App() {
           const saved = session.get("room");
           if (saved) {
             try {
-              accept(await api("join", { code: saved }));
+              accept(await api("join", { code: saved, spectate: session.get("spectatorCode") === saved }));
               setScreen("room");
               return;
             } catch (e) {
@@ -258,11 +262,11 @@ function App() {
   }
 
   return html`
-    <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); setTimerOpen(false); }} timerOpen=${timerOpen} onToggleTimer=${() => { setTimerOpen((o) => !o); setDeckOpen(false); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); setTimerOpen(false); }} onCopy=${copyCode} onLeave=${() => act("leave")}>
+    <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); setTimerOpen(false); }} timerOpen=${timerOpen} onToggleTimer=${() => { setTimerOpen((o) => !o); setDeckOpen(false); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); setTimerOpen(false); }} onCopy=${copyCode} onSpectate=${() => act("spectate")} onLeave=${() => act("leave")}>
       ${inRoom && room.you === room.host && timerOpen && html`<${TimerPanel} seconds=${room.timer ?? 0} onChoose=${(seconds) => { setTimerOpen(false); act("timer", { seconds }); }} onClose=${() => setTimerOpen(false)} />`}
       ${inRoom && room.game && deckOpen && html`<${DeckPanel} game=${room.game} onClose=${() => setDeckOpen(false)} />`}
       ${inRoom && room.game && scoreboardOpen && html`<${TableScoreboard} room=${room} onClose=${() => setScoreboardOpen(false)} />`}
-      ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} />`}
+      ${inRoom && room.game && logOpen && html`<${TableLog} game=${room.game} ctx=${ctx} onClose=${() => setLogOpen(false)} onListSpectators=${() => setNotice(`Spectators present: ${room.spectators.map((p) => p.name).join(", ") || "none"}`)} />`}
     <//>
     <main id="app">
       ${screen === "boot" && html`<p>Connecting…</p>`}

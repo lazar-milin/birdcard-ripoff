@@ -218,7 +218,7 @@ export function move(state, id, action, { timeout = false } = {}) {
 // Remove a timed-out player without losing any of the 110 cards. The room
 // keeps their seat for the kicked balloon, but the game no longer takes turns
 // for them.
-export function kick(state, id) {
+function removeFromGame(state, id, reason) {
   const g = structuredClone(state);
   assert(g.phase !== "over", "This game is finished.");
   const index = g.players.findIndex((p) => p.id === id);
@@ -228,7 +228,7 @@ export function kick(state, id) {
   const hand = player.hand;
   const collection = player.collection;
   g.discard.push(...hand, ...collection);
-  emit(g, { type: "kick", player: id, hand, collection, cards: [...hand, ...collection] });
+  emit(g, { type: reason, player: id, hand, collection, cards: [...hand, ...collection] });
   if (index < g.turn) g.turn--;
   else if (index === g.turn) {
     g.turn %= g.players.length;
@@ -237,6 +237,8 @@ export function kick(state, id) {
   }
   return g;
 }
+export const kick = (state, id) => removeFromGame(state, id, "kick");
+export const spectate = (state, id) => removeFromGame(state, id, "spectate");
 // Cards another player drew stay hidden; everything else in an event is public.
 function redact(event, id) {
   if (event.type !== "draw" || event.player === id) return event;

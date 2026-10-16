@@ -49,6 +49,7 @@ async function body(req) {
   return JSON.parse(str || "{}");
 }
 function snapshot(room, id) {
+  const spectator = room.spectators.some((p) => p.id === id);
   return {
     code: room.code,
     host: room.host,
@@ -57,7 +58,8 @@ function snapshot(room, id) {
     deadline: room.deadline ?? null,
     version: room.version,
     players: room.players,
-    game: room.game ? view(room.game, id) : null,
+    spectators: room.spectators,
+    game: room.game ? view(room.game, spectator ? null : id) : null,
     you: id,
   };
 }
@@ -67,7 +69,14 @@ function session(req) {
   if (!s || Date.now() - s.created > 86400000) throw new Error("Session expired. Reload to sign in.");
   return s;
 }
-const seated = (room, s) => room?.players.some((p) => p.id === s.id && !p.kicked);
+const seated = (room, s) => room?.players.some((p) => p.id === s.id && !p.kicked) ||
+  room?.spectators.some((p) => p.id === s.id);
+const turnStep = (room) => {
+  const game = room?.game;
+  return game && game.phase !== "over"
+    ? `${game.id}:${game.round}:${game.phase}:${game.players[game.turn]?.id}`
+    : null;
+};
 function roomFor(s) {
   const room = rooms.get(s.room);
   if (!seated(room, s))
@@ -84,13 +93,16 @@ function commit(code, next) {
   if (next === prev) return prev;
   clearTimeout(turnTimers.get(code));
   turnTimers.delete(code);
-  clearTimeout(botTimers.get(code));
-  botTimers.delete(code);
+  const sameStep = turnStep(prev) !== null && turnStep(prev) === turnStep(next);
+  const keepBotTimer = sameStep && botTimers.has(code);
+  if (!keepBotTimer) {
+    clearTimeout(botTimers.get(code));
+    botTimers.delete(code);
+  }
   if (next) {
     const bot = next.game?.phase !== "over" && next.players.find((p) => p.id === next.game?.players[next.game.turn]?.id && p.bot);
     const running = next.game && next.game.phase !== "over" && next.timer && !bot;
-    const restarted = !prev || prev.timer !== next.timer ||
-      prev.game?.id !== next.game?.id || prev.game?.seq !== next.game?.seq;
+    const restarted = !sameStep || prev.timer !== next.timer;
     const deadline = running
       ? restarted ? Date.now() + next.timer * config.turnSecondMs : next.deadline
       : null;
@@ -104,12 +116,12 @@ function commit(code, next) {
       timer.unref();
       turnTimers.set(code, timer);
     }
-    if (bot) {
-      const scheduled = rooms.get(code);
+    if (bot && !keepBotTimer) {
+      const scheduledStep = turnStep(next);
       const timer = setTimeout(() => {
         botTimers.delete(code);
         const current = rooms.get(code);
-        if (current !== scheduled) return;
+        if (turnStep(current) !== scheduledStep) return;
         const action = chooseBotAction(current.game, bot.id);
         if (action) commit(code, Rooms.play(current, bot.id, action));
       }, config.botDelayMs);
@@ -260,7 +272,7 @@ export const server = http.createServer(async (req, res) => {
           if (!room) throw new Error("Table not found. Check the table code.");
           if (s.room && s.room !== code) throw new Error("Leave your current room before joining another.");
           assertFree(s, code);
-          commit(code, Rooms.join(room, s));
+          commit(code, Rooms.join(room, s, { spectate: b.spectate === true }));
         }
         s.room = code;
         return json(res, 200, snapshot(rooms.get(code), s.id));
@@ -270,6 +282,8 @@ export const server = http.createServer(async (req, res) => {
         commit(room.code, Rooms.timeout(room));
       if (b.version !== room.version) return json(res, 409, { error: "The table changed. Please try again." });
       if (url.pathname === "/api/start") commit(room.code, Rooms.start(room, s.id));
+      else if (url.pathname === "/api/spectate") commit(room.code, Rooms.spectate(room, s.id));
+      else if (url.pathname === "/api/seat") commit(room.code, Rooms.takeSeat(room, s.id));
       else if (url.pathname === "/api/bot") {
         const next = b.remove
           ? Rooms.removeBot(room, s.id, b.botId)
