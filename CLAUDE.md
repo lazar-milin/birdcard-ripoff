@@ -40,7 +40,7 @@ The engine, server and browser share `public/species.js`: the species table (car
 The invariants, checked by a randomized test in `rooms.test.mjs`:
 - The host always holds a seat and is present whenever anyone is; leaving or stepping away hands the role to the next present player.
 - Leaving a running game marks the seat `away` and keeps the hand. Leaving a lobby or finished table removes the seat, and the last one out closes the room.
-- Newcomers take a seat in a lobby or at a finished table when space exists; joining a running or full table makes them spectators. A non-host may move from a seat to the spectator pool at any time, but can return to a seat only outside a running game. A finished game stays on the table until a rematch, which deals in everyone present and drops away and kicked seats.
+- Newcomers take a seat in a lobby or at a finished table when space exists; joining a running or full table makes them spectators. A seated non-host may move to the spectator pool only before the first game starts, and spectators can return to a seat only outside a running game. A finished game stays on the table until a rematch, which deals in everyone present and drops away and kicked seats.
 - `unfinishedSeat()` finds another table where the player holds a seat in a running game; the server uses it to stop that player from sitting elsewhere.
 
 **Server (`server.mjs`)** is one `node:http` server with all state in memory: `rooms`, `sessions`, per-IP rate `limits`, `waiting` long-poll requests and `turnTimers`. Rooms and sessions expire after 24 hours and are lost on restart, so run a single process. Saving rooms to disk (#21) and per-session rate limits (#20) were closed as not planned; ask before reviving them.

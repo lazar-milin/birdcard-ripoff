@@ -72,7 +72,7 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
       </button>
       ${room && room.you !== room.host && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
-      ${room && room.you !== room.host && room.players.some((p) => p.id === room.you) && html`<button id="spectate-table" class="expand-control" aria-label="Spectate table" onClick=${onSpectate}>${BinocularsIcon}<span class="control-label">Spectate table</span></button>`}
+      ${room && !g && room.you !== room.host && room.players.some((p) => p.id === room.you) && html`<button id="spectate-table" class="expand-control" aria-label="Spectate table" onClick=${onSpectate}>${BinocularsIcon}<span class="control-label">Spectate table</span></button>`}
       ${room && room.you === room.host && html`<button id="timer-toggle" aria-label="Turn timer" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}</button>`}
       ${g && html`<button id="birdhouse" aria-label="Deck and discards" aria-expanded=${deckOpen} aria-controls="deck-panel" onClick=${onToggleDeck}>
         <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
