@@ -5,7 +5,7 @@
 // shown to the player. The server stores the result and bumps the version.
 import { randomInt } from "node:crypto";
 import { speciesOf } from "./public/species.js";
-import { start as deal, move, kick as removePlayer, spectate as removeForSpectating } from "./game.mjs";
+import { start as deal, move, kick as removePlayer } from "./game.mjs";
 
 export const MAX_SEATS = 5;
 const assert = (condition, message) => {
@@ -95,14 +95,12 @@ export function leave(room, playerId) {
 }
 
 export function spectate(room, playerId) {
+  assert(phase(room) === "lobby", "You can only switch to spectating before the game starts.");
   assert(playerId !== room.host, "The host must stay in the game.");
   const player = room.players.find((p) => p.id === playerId && !p.bot && !p.kicked && !p.away);
   assert(player, "Take a seat before spectating.");
   const players = room.players.filter((p) => p.id !== playerId);
-  const next = phase(room) === "playing"
-    ? withGame(room, removeForSpectating(room.game, playerId), players)
-    : { ...room, players };
-  return { ...next, spectators: [...room.spectators, seat(player)] };
+  return { ...room, players, spectators: [...room.spectators, seat(player)] };
 }
 
 export function takeSeat(room, playerId) {

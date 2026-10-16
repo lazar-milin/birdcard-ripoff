@@ -131,18 +131,11 @@ test("spectator pool preserves lobby seats and lets watchers return when space o
   assert.equal(takeSeat(finish(running), "c").players.at(-1).id, "c");
 });
 
-test("switching to spectate during play discards cards and advances an active turn", () => {
+test("seated players cannot switch to spectating after a game starts", () => {
   const room = start(lobby("a", "b"), "a");
-  const all = [...room.game.deck, ...room.game.discard, ...room.game.rows.flat(),
-    ...room.game.players.flatMap((p) => [...p.hand, ...p.collection])].sort();
-  const watching = spectate(room, "b");
-  assert.deepEqual(ids(watching), ["a"]);
-  assert.equal(watching.spectators[0].id, "b");
-  assert.equal(watching.game.events.at(-1).type, room.game.players[room.game.turn].id === "b" ? "turn" : "spectate");
-  assert(watching.game.events.some((e) => e.type === "spectate" && e.player === "b"));
-  assert.deepEqual([...watching.game.deck, ...watching.game.discard, ...watching.game.rows.flat(),
-    ...watching.game.players.flatMap((p) => [...p.hand, ...p.collection])].sort(), all);
-  assert.throws(() => play(watching, "b", { type: "pass" }), /turn/);
+  assert.throws(() => spectate(room, "b"), /before the game starts/);
+  assert.throws(() => spectate(finish(room), "b"), /before the game starts/);
+  assert.deepEqual(ids(room), ["a", "b"]);
 });
 
 test("leaving a running game keeps the seat, and the host role moves to someone present", () => {
