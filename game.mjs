@@ -195,6 +195,7 @@ export function move(state, id, action, { timeout = false } = {}) {
     const keep = cards.length >= s.big ? 2 : 1;
     const kept = cards.slice(0, keep),
       discarded = cards.slice(keep);
+    const speciesBefore = speciesIn(p.collection);
     p.hand = p.hand.filter((c) => speciesOf(c) !== s.id);
     p.collection.push(...kept);
     g.discard.push(...discarded);
@@ -205,6 +206,7 @@ export function move(state, id, action, { timeout = false } = {}) {
       size: keep === 2 ? "big" : "small",
       kept,
       discarded,
+      ...(speciesBefore < 6 && speciesIn(p.collection) === 6 ? { sixSeven: true } : {}),
     });
     endTurn(g);
   } else if (action.type === "pass") {

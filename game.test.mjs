@@ -170,6 +170,18 @@ test("seven species wins with its own end reason", () => {
   g.players[0].collection = cards("owl", "toucan", "duck", "parrot", "magpie", "robin");
   const n = move(g, "a", { type: "flock", bird: "flamingo" });
   assert.equal(n.endReason, "species");
+  assert.equal(newEvents(g, n).find((e) => e.type === "flock").sixSeven, undefined);
+});
+test("a sixth distinct species marks the public flock event for every viewer", () => {
+  const g = fixture();
+  g.phase = "flock";
+  g.players[0].hand = cards("flamingo", "flamingo");
+  g.players[0].collection = cards("owl", "toucan", "duck", "parrot", "magpie");
+  const n = move(g, "a", { type: "flock", bird: "flamingo" });
+  const event = newEvents(g, n).find((e) => e.type === "flock");
+  assert.equal(event.sixSeven, true);
+  assert.equal(view(n, null).events.find((e) => e.seq === event.seq).sixSeven, true);
+  assert.equal(n.endReason, null);
 });
 test("insufficient redeal awards tied largest collections", () => {
   const g = fixture();
