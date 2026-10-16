@@ -60,6 +60,7 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .collection span{white-space:nowrap;border:1px solid transparent}
 .scoreboard .collection span{font-size:9px;padding:3px 4px}
 .collection .chip-missing{background:#e0e5e8;border-color:#aebbc3;color:#627482;opacity:.6}
+.collection .chip-pair{border-color:#408450;border-style:dashed}
 .collection .chip-trio{border-color:#408450;box-shadow:0 0 4px 2px #69b87599}
 .breakpoints{align-items:flex-start}
 .breakpoints .flock-ready{width:max-content;min-width:0}

@@ -34,7 +34,7 @@ export function Chips({ player, collection, showMissing = false }) {
     ${SPECIES.map((s) => {
       const n = collection.filter((c) => speciesOf(c) === s.id).length;
       return n || showMissing
-        ? html`<span key=${s.id} class=${!n ? "chip-missing" : n >= 3 ? "chip-trio" : ""} data-chip=${player + ":" + s.id} style=${"--bird:" + s.color} title=${n >= 3 ? `${s.name}: ${n} collected — one of two sets of three needed to win` : `${s.name}: ${n} collected`}>${s.name}${n ? ` ×${n}` : ""}</span>`
+        ? html`<span key=${s.id} class=${!n ? "chip-missing" : n >= 3 ? "chip-trio" : n === 2 ? "chip-pair" : ""} data-chip=${player + ":" + s.id} style=${"--bird:" + s.color} title=${n >= 3 ? `${s.name}: ${n} collected — one of two sets of three needed to win` : `${s.name}: ${n} collected`}>${s.name}${n ? ` ×${n}` : ""}</span>`
         : null;
     })}
   </div>`;
