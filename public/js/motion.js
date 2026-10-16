@@ -41,7 +41,7 @@ function roles(e) {
   if (e.type === "refill") return [["refill", e.cards]];
   if (e.type === "draw") return [["drawn", e.cards ?? []]];
   if (e.type === "flock") return [["kept", e.kept], ["discarded", e.discarded]];
-  if (e.type === "kick") return [["discarded", e.cards]];
+  if (e.type === "kick" || e.type === "spectate") return [["discarded", e.cards]];
   return [];
 }
 
@@ -111,7 +111,7 @@ export function play(prev, next) {
       tokens(e.kept, playerEl(e.player), chipEl(e.player, e.species), step);
       tokens(e.discarded.slice(0, 3), playerEl(e.player), pileEl("discard"), step);
     }
-    if (e.type === "kick" && e.player !== next.you) {
+    if ((e.type === "kick" || e.type === "spectate") && e.player !== next.you) {
       tokens(Array(Math.min(e.hand.length, 3)).fill(null), playerEl(e.player), pileEl("discard"), step);
       tokens(e.collection.slice(0, 3), playerEl(e.player), pileEl("discard"), step);
     }

@@ -2,7 +2,7 @@
 // Room rule tests, including the randomized test of the seat and host invariants.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRoom, join, leave, start, play, phase, unfinishedSeat, setTimer, timeout, kick, MAX_SEATS } from "./rooms.mjs";
+import { createRoom, join, leave, start, play, phase, unfinishedSeat, setTimer, timeout, kick, spectate, takeSeat, MAX_SEATS } from "./rooms.mjs";
 import { SPECIES, speciesOf } from "./public/species.js";
 
 const P = (id) => ({ id, name: id.toUpperCase() });
@@ -82,7 +82,10 @@ test("timeouts resolve lay, draw and flock, count once, and allow a host kick", 
 test("a lobby seats up to five players", () => {
   const room = lobby("a", "b", "c", "d", "e");
   assert.equal(room.players.length, MAX_SEATS);
-  assert.throws(() => join(room, P("f")), /full/);
+  const watching = join(room, P("f"));
+  assert.equal(watching.players.length, MAX_SEATS);
+  assert.equal(watching.spectators[0].id, "f");
+  assert.throws(() => takeSeat(watching, "f"), /full/);
   assert.equal(join(room, P("c")), room, "joining again changes nothing");
 });
 
@@ -96,14 +99,50 @@ test("leaving a lobby hands the host on, and the last player closes the room (#1
   assert.equal(saved, false);
 });
 
-test("newcomers can't join mid-game but can sit down once it ends (#16)", () => {
+test("newcomers watch mid-game and can sit down once it ends (#16)", () => {
   const running = start(lobby("a", "b"), "a");
   assert.equal(phase(running), "playing");
-  assert.throws(() => join(running, P("c")), /already started/);
+  const watching = join(running, P("c"));
+  assert.equal(watching.players.length, 2);
+  assert.equal(watching.spectators[0].id, "c");
   const done = finish(running);
   const seated = join(done, P("c"));
   assert.deepEqual(ids(seated), ["a", "b", "c"]);
   assert.equal(seated.game, done.game, "the finished game stays on the table");
+});
+
+test("spectator pool preserves lobby seats and lets watchers return when space opens", () => {
+  let room = lobby("a", "b");
+  assert.throws(() => spectate(room, "a"), /host/);
+  room = spectate(room, "b");
+  assert.deepEqual(ids(room), ["a"]);
+  assert.deepEqual(room.spectators.map((p) => p.id), ["b"]);
+  room = join(room, P("c"), { spectate: true });
+  assert.deepEqual(room.spectators.map((p) => p.id), ["b", "c"]);
+  room = takeSeat(room, "b");
+  assert.deepEqual(ids(room), ["a", "b"]);
+  assert.deepEqual(room.spectators.map((p) => p.id), ["c"]);
+  room = leave(room, "c").room;
+  assert.deepEqual(room.spectators, []);
+  room = join(room, P("c"), { spectate: true });
+  assert.equal(room.spectators[0].id, "c");
+  const running = start(room, "a");
+  assert.throws(() => takeSeat(running, "c"), /game ends/);
+  assert.equal(takeSeat(finish(running), "c").players.at(-1).id, "c");
+});
+
+test("switching to spectate during play discards cards and advances an active turn", () => {
+  const room = start(lobby("a", "b"), "a");
+  const all = [...room.game.deck, ...room.game.discard, ...room.game.rows.flat(),
+    ...room.game.players.flatMap((p) => [...p.hand, ...p.collection])].sort();
+  const watching = spectate(room, "b");
+  assert.deepEqual(ids(watching), ["a"]);
+  assert.equal(watching.spectators[0].id, "b");
+  assert.equal(watching.game.events.at(-1).type, room.game.players[room.game.turn].id === "b" ? "turn" : "spectate");
+  assert(watching.game.events.some((e) => e.type === "spectate" && e.player === "b"));
+  assert.deepEqual([...watching.game.deck, ...watching.game.discard, ...watching.game.rows.flat(),
+    ...watching.game.players.flatMap((p) => [...p.hand, ...p.collection])].sort(), all);
+  assert.throws(() => play(watching, "b", { type: "pass" }), /turn/);
 });
 
 test("leaving a running game keeps the seat, and the host role moves to someone present", () => {

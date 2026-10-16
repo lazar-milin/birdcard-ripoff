@@ -65,7 +65,9 @@ Use Leave room in the header at any time, then enter a generated room code on th
 
 - Leaving a running game marks your seat away and keeps your hand. Return from the same browser tab or Discord identity using the code. The table waits if an away player's turn comes up.
 - While you hold an away seat in a running game, you can't create or join another table. The error names the table to return to.
-- New players can join a lobby, or a table whose game has ended, up to five seats. A running game only accepts its own players returning.
+- New players take a seat in a lobby or after a game ends, up to five seats. Joining a full or running table puts them in the spectator pool instead.
+- Any non-host player can use the binoculars in the header to spectate. During a game, their hand and collection go to the discard pile and their turns stop. Spectators see the public table and game log, but no hands or play controls. The Game Log can show the current spectator names.
+- Spectators can take a seat from the small cloud when the table has space and no game is running. They can leave and rejoin by code as spectators; the same tab remembers that choice.
 - Leaving a lobby or a finished table gives up your seat. A finished game stays on screen for everyone else until the host starts a rematch.
 - A rematch deals in everyone present, including newcomers, and releases the seats of players who left.
 - The host is always a present player. When the host leaves or steps away, the next present player takes over.

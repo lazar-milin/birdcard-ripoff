@@ -1,6 +1,6 @@
 // Before editing, read CLAUDE.md at the repo root, especially "Client".
 // Talks to the server and keeps this tab's session in sessionStorage.
-const KEYS = { token: "bird-token", room: "bird-room", name: "bird-name" };
+const KEYS = { token: "bird-token", room: "bird-room", name: "bird-name", spectatorCode: "bird-spectator-code" };
 export const session = {
   get(key) {
     try {

@@ -300,3 +300,36 @@ test("host adds and removes bot seats; bot phases broadcast without human timeou
     config.turnSecondMs = oldSecond;
   }
 });
+
+test("spectators can join, watch without hands, leave and rejoin a running table", async () => {
+  const { people: [host, guest], room: lobby } = await table("Spectator host", "Spectator guest");
+  assert.equal((await api("spectate", { version: lobby.version }, host.token)).status, 400);
+  let state = (await api("spectate", { version: lobby.version }, guest.token)).data;
+  assert.equal(state.players.length, 1);
+  assert.deepEqual(state.spectators.map((p) => p.name), ["Spectator guest"]);
+  assert.equal((await api("timer", { version: state.version, seconds: 30 }, guest.token)).status, 400);
+  assert.equal((await api("move", { version: state.version, action: { type: "pass" } }, guest.token)).status, 400);
+  state = (await api("seat", { version: state.version }, guest.token)).data;
+  assert.equal(state.players.length, 2);
+  state = (await api("timer", { version: state.version, seconds: 30 }, host.token)).data;
+  state = (await api("start", { version: state.version }, host.token)).data;
+  state = (await api("spectate", { version: state.version }, guest.token)).data;
+  assert.equal(state.game.players.length, 1);
+  assert.equal(state.game.players[0].hand, undefined, "the former player receives a spectator view");
+  assert.equal(state.game.players[0].handCount, 8);
+  assert.equal(state.spectators[0].id, guest.id);
+  assert.equal((await api("seat", { version: state.version }, guest.token)).status, 400);
+  const newViewer = await login("Late viewer");
+  const deadline = state.deadline;
+  const joined = (await api("join", { code: state.code }, newViewer.token)).data;
+  assert.equal(joined.spectators.length, 2);
+  assert.equal(joined.deadline, deadline, "joining to watch does not restart the turn timer");
+  assert(joined.game.players.every((p) => p.hand === undefined));
+  assert.equal((await api("state", null, newViewer.token)).status, 200);
+  const left = await api("leave", { version: joined.version }, guest.token);
+  assert.equal(left.data.saved, false);
+  const returned = (await api("join", { code: state.code, spectate: true }, guest.token)).data;
+  assert.equal(returned.spectators.length, 2);
+  assert(returned.game.players.every((p) => p.hand === undefined));
+  assert.equal((await api("state", null, host.token)).data.game.players[0].hand.length, 8);
+});

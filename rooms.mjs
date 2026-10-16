@@ -5,7 +5,7 @@
 // shown to the player. The server stores the result and bumps the version.
 import { randomInt } from "node:crypto";
 import { speciesOf } from "./public/species.js";
-import { start as deal, move, kick as removePlayer } from "./game.mjs";
+import { start as deal, move, kick as removePlayer, spectate as removeForSpectating } from "./game.mjs";
 
 export const MAX_SEATS = 5;
 const assert = (condition, message) => {
@@ -38,12 +38,13 @@ const settle = (room) => {
 };
 
 export function createRoom(code, player) {
-  return { code, host: player.id, players: [seat(player)], game: null, standings: [], timer: 0, deadline: null };
+  return { code, host: player.id, players: [seat(player)], spectators: [], game: null, standings: [], timer: 0, deadline: null };
 }
 
 // Returns the same room when nothing changes, such as a present player joining again.
-export function join(room, player) {
+export function join(room, player, { spectate = false } = {}) {
   assert(!player.bot, "Bots are added by the host.");
+  if (room.spectators.some((p) => p.id === player.id)) return room;
   const mine = room.players.find((p) => p.id === player.id);
   if (mine) {
     if (mine.kicked) {
@@ -60,15 +61,17 @@ export function join(room, player) {
       }),
     });
   }
-  // Newcomers can sit down in a lobby or after a game ends, never mid-game.
-  assert(phase(room) !== "playing", "This game has already started.");
-  assert(room.players.length < MAX_SEATS, "This table is full.");
+  // A running or full table stays joinable to watch; spectators do not take seats.
+  if (spectate || phase(room) === "playing" || room.players.length >= MAX_SEATS)
+    return { ...room, spectators: [...room.spectators, seat(player)] };
   return withHost({ ...room, players: [...room.players, seat(player)] });
 }
 
 // Leaving a running game keeps the seat and hand for a return. Leaving a lobby or a
 // finished table gives up the seat; a finished game stays visible to everyone else.
 export function leave(room, playerId) {
+  if (room.spectators.some((p) => p.id === playerId))
+    return { room: { ...room, spectators: room.spectators.filter((p) => p.id !== playerId) }, saved: false };
   assert(
     room.players.some((p) => p.id === playerId),
     "Join a table first.",
@@ -89,6 +92,25 @@ export function leave(room, playerId) {
     }),
     saved: false,
   };
+}
+
+export function spectate(room, playerId) {
+  assert(playerId !== room.host, "The host must stay in the game.");
+  const player = room.players.find((p) => p.id === playerId && !p.bot && !p.kicked && !p.away);
+  assert(player, "Take a seat before spectating.");
+  const players = room.players.filter((p) => p.id !== playerId);
+  const next = phase(room) === "playing"
+    ? withGame(room, removeForSpectating(room.game, playerId), players)
+    : { ...room, players };
+  return { ...next, spectators: [...room.spectators, seat(player)] };
+}
+
+export function takeSeat(room, playerId) {
+  const spectator = room.spectators.find((p) => p.id === playerId);
+  assert(spectator, "Join as a spectator first.");
+  assert(phase(room) !== "playing", "Wait until this game ends to take a seat.");
+  assert(room.players.length < MAX_SEATS, "This table is full.");
+  return { ...room, spectators: room.spectators.filter((p) => p.id !== playerId), players: [...room.players, seat(spectator)] };
 }
 
 export function addBot(room, hostId, bot) {

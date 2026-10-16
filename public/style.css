@@ -236,3 +236,13 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .add-bot-cloud{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:132px;height:77px;margin:8px auto!important;padding:12px 12px 7px;border:0;box-shadow:0 4px 0 #83bad54d;background:#f5fcff;clip-path:polygon(0 44%,6% 44%,6% 25%,18% 25%,18% 10%,35% 10%,35% 0,65% 0,65% 12%,82% 12%,82% 29%,94% 29%,94% 45%,100% 45%,100% 82%,92% 82%,92% 100%,8% 100%,8% 82%,0 82%);font-size:11px}
 .add-bot-cloud .pixel-plus{width:18px;height:18px}
 .add-bot-cloud:hover:not(:disabled){background:#e8f5e4}
+/* Spectator controls share the table's pixel-cloud and expanding-button language. */
+#spectate-table.expand-control{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:47px;height:47px;padding:10px;background:#d9e0e4;border-color:#8898a2;color:#465763}
+#spectate-table:hover:not(:disabled){background:#e8edf0;border-color:#697b87}
+.binoculars-icon{width:24px;height:24px;flex:0 0 24px;shape-rendering:crispEdges}
+.log-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}.log-head-actions button{font-size:10px;padding:6px 8px}
+.spectator-list{margin:20px 0 0;padding-top:12px;border-top:2px dashed #b9d6e6;color:#466982;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.return-seat-cloud{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:132px;height:77px;margin:8px auto!important;padding:12px 12px 7px;border:0;box-shadow:0 4px 0 #83bad54d;background:#f5fcff;clip-path:polygon(0 44%,6% 44%,6% 25%,18% 25%,18% 10%,35% 10%,35% 0,65% 0,65% 12%,82% 12%,82% 29%,94% 29%,94% 45%,100% 45%,100% 82%,92% 82%,92% 100%,8% 100%,8% 82%,0 82%);font-size:11px}
+.return-seat-cloud .pixel-plus{width:18px;height:18px}.return-seat-cloud:hover:not(:disabled){background:#e8f5e4}
+.spectator-hand{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px;text-align:center}.spectator-hand strong{font-size:25px;color:#465f70}.spectator-hand .return-seat-cloud{margin-top:14px!important}
+@media(max-width:650px){.log-head-actions{flex-wrap:wrap}.log-head-actions button{font-size:9px}.spectator-hand strong{font-size:20px}}
