@@ -75,12 +75,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (screen !== "room") return;
     for (const src of new Set(PENGUIN_SEQUENCE.map(([path]) => path))) {
       const image = new Image();
       image.src = src;
     }
-  }, [screen]);
+  }, []);
 
   useEffect(() => {
     if (sixSeven || !sixSevenQueue.length) return;
@@ -309,6 +308,13 @@ function App() {
     setResetOpen(false);
     toEntrance(`${result.deleted} room${result.deleted === 1 ? "" : "s"} deleted. The server is ready for new rooms.`);
   }
+  function celebratePingu() {
+    setResetOpen(false);
+    setSixSevenQueue((queue) => [...queue, {
+      key: `pingu:${Date.now()}`,
+      name: session.get("name")?.trim() || "Pingu",
+    }]);
+  }
 
   return html`
     <${Header} deckOpen=${deckOpen} onToggleDeck=${() => { setDeckOpen((o) => !o); setLogOpen(false); setScoreboardOpen(false); setTimerOpen(false); }} timerOpen=${timerOpen} onToggleTimer=${() => { setTimerOpen((o) => !o); setDeckOpen(false); setLogOpen(false); setScoreboardOpen(false); }} muted=${muted} onToggleSound=${toggleSound} room=${inRoom ? room : null} logOpen=${logOpen} onToggleLog=${() => { setLogOpen((o) => !o); setScoreboardOpen(false); setDeckOpen(false); setTimerOpen(false); }} scoreboardOpen=${scoreboardOpen} onToggleScoreboard=${() => { setScoreboardOpen((o) => !o); setLogOpen(false); setDeckOpen(false); setTimerOpen(false); }} onCopy=${copyCode} onSpectate=${() => act("spectate")} onLeave=${() => act("leave")}>
@@ -342,12 +348,12 @@ function App() {
         ? html`<${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />`
         : html`<${Lobby} room=${room} act=${act} />`)}
     </main>
-    ${inRoom && sixSeven && html`<div id="six-seven-celebration" role="status" aria-live="assertive" aria-atomic="true" key=${sixSeven.key}>
+    ${sixSeven && html`<div id="six-seven-celebration" role="status" aria-live="assertive" aria-atomic="true" key=${sixSeven.key}>
       <img src=${PENGUIN_SEQUENCE[penguinFrame][0]} alt="" />
       <strong>${sixSeven.name} six-sevened!!!</strong>
     </div>`}
     <div id="notice" role="status" aria-live="polite">${notice || null}</div>
-    <${ResetDialog} open=${resetOpen} onClose=${() => setResetOpen(false)} onSubmit=${resetRooms} />
+    <${ResetDialog} open=${resetOpen} onClose=${() => setResetOpen(false)} onSubmit=${resetRooms} onPingu=${celebratePingu} />
   `;
 }
 

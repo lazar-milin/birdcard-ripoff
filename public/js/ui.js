@@ -421,7 +421,7 @@ function VictoryDialog({ room, ctx, open, onClose, act, spectating }) {
   </dialog>`;
 }
 
-export function ResetDialog({ open, onClose, onSubmit }) {
+export function ResetDialog({ open, onClose, onSubmit, onPingu }) {
   const dialog = useDialog(open, onClose);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -444,11 +444,16 @@ export function ResetDialog({ open, onClose, onSubmit }) {
       setBusy(false);
     }
   }
+  function inputPassword(event) {
+    const value = event.currentTarget.value;
+    setPassword(value);
+    if (value.trim().toLowerCase() === "pingu") onPingu();
+  }
   return html`<dialog id="reset-dialog" ref=${dialog.ref} onClose=${dialog.onClose}>
     <form id="reset-form" onSubmit=${submit}>
       <h2>Delete all rooms</h2>
       <p>Enter the password to clear every room on this server.</p>
-      <label>Password<input id="reset-password" type="password" required autocomplete="off" value=${password} onInput=${(e) => setPassword(e.currentTarget.value)} /></label>
+      <label>Password<input id="reset-password" type="password" required autocomplete="off" value=${password} onInput=${inputPassword} /></label>
       <p id="reset-error" role="alert">${error}</p>
       <div class="actions">
         <button id="reset-cancel" type="button" onClick=${onClose}>Cancel</button>
