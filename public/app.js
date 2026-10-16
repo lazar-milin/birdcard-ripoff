@@ -8,16 +8,13 @@ import { capture, play } from "./js/motion.js";
 import { isMuted, toggleSound, subscribeSound, installSoundUnlock, playSounds } from "./js/sound.js";
 import { Header, TimerPanel, TableLog, TableScoreboard, DeckPanel, Scoreboard, Table, Lobby, Entrance, ResetDialog } from "./js/ui.js";
 
-const PENGUIN_SEQUENCE = [
-  ["/art/penguin-neutral.png", 200],
-  ["/art/penguin-right.png", 300],
-  ["/art/penguin-neutral.png", 200],
-  ["/art/penguin-left.png", 300],
+const PENGUIN_CYCLE = [
   ["/art/penguin-neutral.png", 200],
   ["/art/penguin-right.png", 300],
   ["/art/penguin-neutral.png", 200],
   ["/art/penguin-left.png", 300],
 ];
+const PENGUIN_SEQUENCE = Array.from({ length: 4 }, () => PENGUIN_CYCLE).flat();
 
 function App() {
   const [muted, setMuted] = useState(isMuted);
@@ -346,8 +343,8 @@ function App() {
         : html`<${Lobby} room=${room} act=${act} />`)}
     </main>
     ${inRoom && sixSeven && html`<div id="six-seven-celebration" role="status" aria-live="assertive" aria-atomic="true" key=${sixSeven.key}>
-      <strong>${sixSeven.name} six-sevened!!!</strong>
       <img src=${PENGUIN_SEQUENCE[penguinFrame][0]} alt="" />
+      <strong>${sixSeven.name} six-sevened!!!</strong>
     </div>`}
     <div id="notice" role="status" aria-live="polite">${notice || null}</div>
     <${ResetDialog} open=${resetOpen} onClose=${() => setResetOpen(false)} onSubmit=${resetRooms} />
