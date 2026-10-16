@@ -111,6 +111,9 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 #scoreboard-toggle:hover .control-label,#scoreboard-toggle:focus-visible .control-label{max-width:180px}
 #table-scoreboard li{display:flex;align-items:center;justify-content:space-between;gap:16px}
 #table-scoreboard li span{overflow-wrap:anywhere}
+#table-scoreboard .standing-player-name{display:flex;align-items:center;gap:6px;min-width:0}
+#table-scoreboard .standing-player-name span{min-width:0}
+#table-scoreboard .leader-cup{width:14px;height:14px;flex:0 0 14px;color:#ad8230;shape-rendering:crispEdges}
 #table-scoreboard li strong{white-space:nowrap;color:#705d26}
 .rematch-host{background:#c6e7bd;border-color:#408450;color:#254f34;box-shadow:0 0 4px 2px #69b87599}
 .rematch-host:hover:not(:disabled){background:#d8efcf;border-color:#408450}
