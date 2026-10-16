@@ -204,7 +204,7 @@ export const server = http.createServer(async (req, res) => {
           name = guestName(b.name);
         }
         const token = key();
-        sessions.set(token, { id, name, created: Date.now(), room: null });
+        sessions.set(token, { id, name, discord: Boolean(access_token), created: Date.now(), room: null });
         return json(res, 200, { token, id, name, ...(access_token ? { access_token } : {}) });
       }
       const s = session(req);
