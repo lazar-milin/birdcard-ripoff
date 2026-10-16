@@ -1,3 +1,4 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
 // Card motion. capture() records where every card is before an update; play()
 // runs after the update and flies each card from its old place to its new one.
 // Events from the server say where cards that appear or vanish came from or went.

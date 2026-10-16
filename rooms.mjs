@@ -1,3 +1,4 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Room rules".
 // Room rules: seats, host, and the lobby → playing → finished cycle.
 // Every transition is pure, like move() in game.mjs. It returns a new room,
 // returns null when the room closes, or throws an Error whose message is

@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
+// Tests public/js/events.js from Node.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { changedEvents } from './public/js/events.js';

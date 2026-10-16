@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
+// The client root: boot, session, actions, header panels and long polling.
 import { html, render, useState, useEffect, useLayoutEffect, useRef, useCallback } from "./vendor/preact.js";
 import { api, session } from "./js/api.js";
 import { shouldAutoEnd } from "./js/auto-turn.js";

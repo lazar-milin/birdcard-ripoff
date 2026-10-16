@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Rules engine".
+// Engine tests, including the randomized test that all 110 cards are conserved.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { start, move, kick, view, newDeck } from "./game.mjs";

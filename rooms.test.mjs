@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Room rules".
+// Room rule tests, including the randomized test of the seat and host invariants.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoom, join, leave, start, play, phase, unfinishedSeat, setTimer, timeout, kick, MAX_SEATS } from "./rooms.mjs";

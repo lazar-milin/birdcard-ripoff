@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Rules engine" and "Rules conventions".
+// The rules engine: pure functions over a plain JSON game state, with no I/O.
 import { randomInt } from "node:crypto";
 import { SPECIES, speciesOf } from "./public/species.js";
 

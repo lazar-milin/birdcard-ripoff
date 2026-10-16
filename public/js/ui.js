@@ -1,3 +1,4 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
 // Page components. Cards are keyed by id so they keep their elements between updates.
 import { html, useState, useEffect, useLayoutEffect, useRef } from "../vendor/preact.js";
 import { SPECIES, SPECIES_BY_ID, speciesOf } from "../species.js";

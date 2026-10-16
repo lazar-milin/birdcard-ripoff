@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
+// Short interface cues through Web Audio. Sound stays muted until the player turns it on.
 import { changedEvents } from "./events.js";
 
 const KEY = "bird-sound-muted";

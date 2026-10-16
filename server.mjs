@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Server".
+// The HTTP server: an adapter over rooms.mjs that keeps every table in memory.
 import http from "node:http";
 import { randomBytes, randomInt } from "node:crypto";
 import { readFile } from "node:fs/promises";

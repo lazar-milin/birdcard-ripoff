@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Architecture".
+// The species table, shared by the engine, server and browser.
 // User-supplied pixel bird illustrations, mapped to their card species.
 export const SPECIES = [
   {

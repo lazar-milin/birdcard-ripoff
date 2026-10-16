@@ -1,3 +1,4 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
 // Shared by sound and motion. Never replay history on a refresh or room switch.
 export function changedEvents(prev, next) {
   if (!prev || !next || prev.code !== next.code || !next.game) return [];

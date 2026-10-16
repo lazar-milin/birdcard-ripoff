@@ -1,3 +1,5 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Server".
+// HTTP tests against a server on an ephemeral port with shortened timings.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { server, config } from "./server.mjs";

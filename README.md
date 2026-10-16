@@ -2,6 +2,8 @@
 
 A playable 1–5 player card game using CuBirds mechanics, with rounded shield cards, circular illustration placeholders, overlapping hand stacks, pixel clouds, and electrical wire rows. No official artwork or logos are bundled.
 
+Working on the code, or pointing a coding agent at it? Start with [CLAUDE.md](CLAUDE.md).
+
 ## Play locally
 
 Requires Node.js 22 or newer. The local game needs no package installation:

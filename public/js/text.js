@@ -1,3 +1,4 @@
+// Before editing, read CLAUDE.md at the repo root, especially "Client".
 // Turns game events into readable sentences. Species come back as separate
 // parts so the page can show them in their card colors.
 import { SPECIES, SPECIES_BY_ID, speciesOf } from "../species.js";
