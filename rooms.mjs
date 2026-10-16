@@ -11,7 +11,7 @@ export const MAX_SEATS = 5;
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
-const seat = (player) => ({ id: player.id, name: player.name, timeouts: 0 });
+const seat = (player) => ({ id: player.id, name: player.name, discord: player.discord === true, timeouts: 0 });
 const present = (room) => room.players.filter((p) => !p.away && !p.kicked);
 
 // "lobby" before the first game, "playing" during one, "finished" after one ends.

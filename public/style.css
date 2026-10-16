@@ -100,6 +100,7 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 .scoreboard .player-name{display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.25}
 .player-name .own-name{background:#e8f5e4;outline:1px dashed #9abb91;border-radius:2px;padding:2px 4px}
 .host-star{width:13px;height:13px;flex-shrink:0;color:#b28a35;shape-rendering:crispEdges}
+.player-discord{display:block;width:17px;height:13px;flex:0 0 17px}
 .player.active::after{top:0;padding:4px 9px;font-size:10px}
 .scoreboard{margin-top:8px;margin-bottom:12px}
 .scoreboard .player{padding-top:32px;padding-bottom:15px}

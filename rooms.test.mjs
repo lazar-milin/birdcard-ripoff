@@ -11,6 +11,16 @@ const lobby = (...names) => names.slice(1).reduce((r, n) => join(r, P(n)), creat
 // Finishes a running game by declaring a winner, as move() would.
 const finish = (room) => ({ ...room, game: { ...room.game, phase: "over", winners: [room.game.players[0].id] } });
 
+test("verified Discord identity stays with a seat through games and rematches", () => {
+  const discordPlayer = { ...P("a"), discord: true };
+  let room = join(createRoom("ROOM", discordPlayer), P("b"));
+  assert.deepEqual(room.players.map((p) => p.discord), [true, false]);
+  room = start(room, "a");
+  assert.deepEqual(room.players.map((p) => p.discord), [true, false]);
+  room = start(finish(room), "a");
+  assert.deepEqual(room.players.map((p) => p.discord), [true, false]);
+});
+
 test("the creator hosts a new lobby", () => {
   const room = createRoom("ROOM", P("a"));
   assert.equal(room.host, "a");

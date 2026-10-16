@@ -146,6 +146,7 @@ export function Scoreboard({ room, onKick }) {
           ${g?.phase === "over" && p.wantsRematch && html`<span class="rematch-badge">WANTS A REMATCH</span>`}
           <strong class="player-name">
             ${p.id === room.host && html`<svg class="host-star" viewBox="0 0 16 16" role="img" aria-label="Host"><path d="M6 0h4v4h2v2h4v4h-4v2h2v4h-4v-2H6v2H2v-4h2v-2H0V6h4V4h2z" fill="currentColor" /></svg>`}
+            ${p.discord && html`<img class="player-discord" src="/art/discord-symbol.svg" alt="Discord" />`}
             <span class=${p.id === room.you ? "own-name" : ""} aria-label=${p.id === room.you ? `${p.name}, you` : undefined}>${p.name}</span>${p.away ? " · away" : ""}
             ${g && g.phase !== "over" && room.you === room.host && p.id !== room.host && p.timeouts >= 2 && html`<button class="kick-player" aria-label=${`Kick ${p.name}`} onClick=${() => onKick(p.id)}>Kick</button>`}
           </strong>

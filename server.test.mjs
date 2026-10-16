@@ -33,8 +33,12 @@ test("guest defaults receive a color and an unused bird, while chosen names are 
     assert.notEqual(guest.name.toLowerCase(), "player");
     const joined = (await api("join", { create: true }, guest.token)).data;
     assert.equal(joined.players[0].name, guest.name);
+    assert.equal(joined.players[0].discord, false);
   }
   assert.equal((await login("Chosen name")).name, "Chosen name");
+  const spoofed = (await api("login", { name: "Guest", discord: true })).data;
+  const room = (await api("join", { create: true }, spoofed.token)).data;
+  assert.equal(room.players[0].discord, false, "a guest cannot claim the Discord icon");
 });
 test("Discord display names bypass guest name generation", async () => {
   const fetchOriginal = globalThis.fetch;
@@ -55,6 +59,11 @@ test("Discord display names bypass guest name generation", async () => {
     assert.equal(result.data.name, "Player");
     const joined = await api("join", { create: true }, result.data.token);
     assert.equal(joined.data.players[0].name, "Player");
+    assert.equal(joined.data.players[0].discord, true);
+    const guest = await login("Guest");
+    const guestView = (await api("join", { code: joined.data.code }, guest.token)).data;
+    assert.equal(guestView.players.find((p) => p.id === result.data.id).discord, true);
+    assert.equal(guestView.players.find((p) => p.id === guest.id).discord, false);
   } finally {
     globalThis.fetch = fetchOriginal;
     if (clientIdOriginal === undefined) delete process.env.DISCORD_CLIENT_ID;
