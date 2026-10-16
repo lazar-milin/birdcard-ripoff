@@ -62,16 +62,17 @@ function App() {
   }, [room]);
 
   const act = useCallback(async (path, action, successNotice = "") => {
-    if (busy.current || !roomRef.current) return;
+    const current = roomRef.current;
+    if (busy.current || !current) return;
     busy.current = true;
     try {
       const result = await api(path, {
-        version: roomRef.current.version,
+        version: current.version,
         ...(path === "move" ? { action } : action ?? {}),
       });
       setSelected(null);
       if (path === "leave") {
-        if (roomRef.current.spectators?.some((p) => p.id === roomRef.current.you)) session.set("spectatorCode", roomRef.current.code);
+        if (current.spectators?.some((p) => p.id === current.you)) session.set("spectatorCode", current.code);
         toEntrance(result.saved ? `Left room ${result.code}. Your seat is saved; rejoin with this code.` : "You left the room.");
       } else {
         if (path === "spectate") session.set("spectatorCode", result.code);

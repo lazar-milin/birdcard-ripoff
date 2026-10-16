@@ -209,7 +209,7 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 }
 
 /* Turn timer, timeout notices, and host kick control. */
-#timer-toggle{display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;padding:8px;background:#d9c7ed;border-color:#876ba8;color:#5c427a}
+#timer-toggle{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:47px;width:auto;height:47px;padding:8px 10px;gap:0;background:#d9c7ed;border-color:#876ba8;color:#5c427a}
 #timer-toggle:hover:not(:disabled),#timer-toggle[aria-expanded="true"]{background:#e5d6f4;border-color:#6e5092;color:#4c326e}
 .clock-icon{display:block;width:26px;height:26px;shape-rendering:crispEdges}
 #timer-status{display:flex;flex:0 0 auto;align-items:center;justify-content:center;flex-direction:column;gap:1px;min-height:47px;color:#42637a}

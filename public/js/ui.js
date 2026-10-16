@@ -57,7 +57,7 @@ const ClockIcon = html`<svg class="clock-icon" viewBox="0 0 24 24" aria-hidden="
   <path d="M11 6h2v7h5v2h-7z" fill="currentColor" />
 </svg>`;
 const BotIcon = html`<svg class="bot-icon" viewBox="0 0 20 20" role="img" aria-label="Bot"><path d="M9 1h2v3h5v2h2v10h-2v2H4v-2H2V6h2V4h5z" fill="currentColor"/><path d="M5 8h3v3H5zm7 0h3v3h-3zM6 14h8v2H6z" fill="#f5fcff"/></svg>`;
-const BinocularsIcon = html`<svg class="binoculars-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h5v3h2v4h2V8h2V5h5v3h2v11h-9v-4h-2v4H2V8h2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="miter"/><path d="M5 14h3v3H5zm11 0h3v3h-3z" fill="currentColor"/></svg>`;
+const BinocularsIcon = html`<svg class="binoculars-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 2h5v3H4zm11 0h5v3h-5zM3 5h7v8H3zm11 0h7v8h-7zM10 8h4v6h-4zM3 13h7v2h1v5H9v2H3v-2H1v-5h2zm11 0h7v2h2v5h-2v2h-6v-2h-2v-5h1z" fill="currentColor"/><path d="M4 15h5v5H4zm11 0h5v5h-5z" fill="#b7d6e3"/><path d="M5 16h2v2H5zm11 0h2v2h-2z" fill="#eaf5f8"/></svg>`;
 const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
 export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onSpectate, onLeave, children }) {
@@ -70,10 +70,10 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
       <button id="sound-toggle" aria-label=${muted ? "Unmute sounds" : "Mute sounds"} title=${muted ? "Unmute sounds" : "Mute sounds"} aria-pressed=${!muted} onClick=${onToggleSound}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l11-2v12M9 9l11-2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h6v5H3zm11-2h6v5h-6z" fill="currentColor"/>${muted && html`<path d="M3 3l18 18" stroke="#ba4949" stroke-width="3" />`}</svg>
       </button>
-      ${room && room.you !== room.host && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
+      ${room && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
       ${room && !g && room.you !== room.host && room.players.some((p) => p.id === room.you) && html`<button id="spectate-table" class="expand-control" aria-label="Spectate table" onClick=${onSpectate}>${BinocularsIcon}<span class="control-label">Spectate table</span></button>`}
-      ${room && room.you === room.host && html`<button id="timer-toggle" aria-label="Turn timer" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}</button>`}
+      ${room && room.you === room.host && html`<button id="timer-toggle" class="expand-control" aria-label="Turn timer settings" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}<span class="control-label">Turn timer</span></button>`}
       ${g && html`<button id="birdhouse" aria-label="Deck and discards" aria-expanded=${deckOpen} aria-controls="deck-panel" onClick=${onToggleDeck}>
         <svg viewBox="0 0 32 36" aria-hidden="true"><path d="M2 14h4v-4h4V6h4V2h4v4h4v4h4v4h4v4h-4v14H6V18H2z" fill="#d9f0fa" stroke="currentColor" stroke-width="2"/><path d="M13 15h6v7h-6zM11 27h10v2H11zM14 32h4v4h-4z" fill="currentColor"/></svg>
         <span><span data-pile="deck"><b>${g.deckCount}</b> in deck</span><small data-pile="discard"><b>${g.discardCount}</b> discarded</small></span>
