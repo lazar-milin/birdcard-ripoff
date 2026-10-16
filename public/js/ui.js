@@ -109,9 +109,10 @@ export function TableLog({ game, ctx, onClose }) {
 
 export function TableScoreboard({ room, onClose }) {
   const standings = [...(room.standings ?? [])].sort((a, b) => b.wins - a.wins || a.name.localeCompare(b.name));
+  const mostWins = standings[0]?.wins ?? 0;
   return html`<section id="table-scoreboard" class="log-panel" aria-label="Table scoreboard">
     <div class="log-head"><h2>Table scoreboard</h2><button onClick=${onClose}>Close</button></div>
-    ${standings.length ? html`<ol>${standings.map((p) => html`<li key=${p.id}><span>${p.name}</span><strong>${p.wins} ${p.wins === 1 ? "win" : "wins"}</strong></li>`)}</ol>` : html`<p>No wins yet. Finish a game to start the scoreboard.</p>`}
+    ${standings.length ? html`<ol>${standings.map((p) => html`<li key=${p.id}><span class="standing-player-name"><span>${p.name}</span>${mostWins > 0 && p.wins === mostWins && html`<svg class="leader-cup" viewBox="0 0 24 24" role="img" aria-label="Most wins at this table"><path d="M7 3h10v9l-3 3h-1v4h4v3H7v-3h4v-4h-1l-3-3V3zM7 5H3v5l4 3m10-8h4v5l-4 3" fill="none" stroke="currentColor" stroke-width="2" /></svg>`}</span><strong>${p.wins} ${p.wins === 1 ? "win" : "wins"}</strong></li>`)}</ol>` : html`<p>No wins yet. Finish a game to start the scoreboard.</p>`}
   </section>`;
 }
 
