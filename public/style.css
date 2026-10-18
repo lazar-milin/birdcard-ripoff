@@ -266,9 +266,9 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 #hand-layout-toggle{display:none}
 @media(min-width:900px){
   .table-layout .hand{position:relative;padding-bottom:46px}
-  #hand-layout-toggle{position:absolute;right:10px;bottom:9px;z-index:5;display:grid;place-items:center;width:31px;height:31px;padding:5px;background:#4f8bb7;border:0;color:#fff;box-shadow:none}
-  #hand-layout-toggle svg{width:19px;height:19px;shape-rendering:crispEdges}
-  #hand-layout-toggle:hover:not(:disabled),#hand-layout-toggle[aria-pressed="true"]{background:#3873a0;color:#fff}
+  #hand-layout-toggle{position:absolute;right:10px;bottom:9px;z-index:5;display:grid;place-items:center;width:31px;height:31px;padding:3px;background:transparent;border:0;border-radius:0;color:#3873a0;box-shadow:none}
+  #hand-layout-toggle svg{width:25px;height:25px;shape-rendering:crispEdges}
+  #hand-layout-toggle:hover:not(:disabled),#hand-layout-toggle[aria-pressed="true"]{background:transparent;border:0;color:#255b86}
   .hand-layout-tip{position:absolute;right:0;bottom:calc(100% + 6px);display:none;width:max-content;padding:5px 7px;background:#294c6e;color:white;font-size:10px;white-space:nowrap;pointer-events:none}
   #hand-layout-toggle:hover .hand-layout-tip,#hand-layout-toggle:focus-visible .hand-layout-tip{display:block}
   .table-layout.side-hand{--side-hand-width:clamp(306px,34vw,370px)}
@@ -279,10 +279,10 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
   .side-hand .hand-label .eyebrow{font-size:8px}
   .side-hand .hand-cards{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:max-content;align-content:start;gap:2px 6px;padding:4px 0 8px;scrollbar-width:thin;scrollbar-color:#79a5ba transparent}
   .side-hand .hand-cards>.hand-group{--hand-card-width:82px;justify-self:center;max-width:100%;padding:24px 3px 3px}
-  .side-hand .hand-group .card{--card-width:82px;--card-height:105px}
+  .side-hand .hand-group .card{--card-width:82px;--card-height:105px;border-radius:7px 7px 50% 50% / 7px 7px 41px 41px}
   .side-hand .hand-group .card+.card{margin-left:-62px}
   .side-hand .hand-group .card-top{height:27px}
   .side-hand .hand-group .card-top strong{font-size:10px;line-height:11px;max-width:55px}
   .side-hand .hand-group .breakpoints{font-size:11px;line-height:11px}
-  .side-hand .hand-group .art{width:58px;height:58px}
+  .side-hand .hand-group .art{width:68px;height:68px}
 }
