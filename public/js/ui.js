@@ -358,11 +358,14 @@ export function Table({ room, ctx, selected, onSelect, act }) {
       <div class="hand-label">
         <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
         <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
-        ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move hand below the wires" : "Move hand to the left of the wires"} title=${sideHand ? "Hand below wires" : "Hand beside wires"} aria-pressed=${sideHand} onClick=${() => setSideHand((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h7v18H2zM12 5h10v2H12zM12 11h10v2H12zM12 17h10v2H12z" fill="currentColor" /></svg></button>`}
       </div>
       ${me
         ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
         : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
+      ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move back down" : "Move to the left"} aria-pressed=${sideHand} onClick=${() => setSideHand((value) => !value)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" />${sideHand ? html`<rect x="2" y="2" width="6" height="20" fill="currentColor" />` : html`<rect x="2" y="16" width="20" height="6" fill="currentColor" />`}</svg>
+        <span class="hand-layout-tip">${sideHand ? "Move back down" : "Move to the left"}</span>
+      </button>`}
     </section>`}
     </div>
     <div class="hand-heading">
@@ -530,10 +533,10 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
             ? html`<p>No open tables yet. Create one!</p>`
             : html`<div class="table-clouds">${tables.map((table) => html`<button
                 key=${table.code} class="table-cloud"
-                aria-label=${`Join table ${table.code}, ${table.players} of 5 players`}
+                aria-label=${`Join table ${table.code}, hosted by ${table.hostName}, ${table.players} of 5 players`}
                 onClick=${async () => { if (!(await onJoin(false, table.code, name))) await refreshTables.current?.(); }}>
                 <strong>Table ${table.code}</strong>
-                <span>${table.players}/5 players</span>
+                <span class="table-cloud-info">${table.hostDiscord && html`<img src="/art/discord-symbol.svg" alt="Discord" />`}<span class="table-cloud-host">${table.hostName}</span><span class="table-cloud-count">· ${table.players}/5 players</span></span>
               </button>`)}</div>`}
     </section>
     ${canReset && html`<div class="reset-rooms"><button id="delete-rooms" onClick=${onReset}>Delete all rooms</button></div>`}

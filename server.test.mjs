@@ -60,6 +60,9 @@ test("Discord display names bypass guest name generation", async () => {
     const joined = await api("join", { create: true }, result.data.token);
     assert.equal(joined.data.players[0].name, "Player");
     assert.equal(joined.data.players[0].discord, true);
+    const openTable = (await api("tables")).data.tables.find((t) => t.code === joined.data.code);
+    assert.equal(openTable.hostName, "Player");
+    assert.equal(openTable.hostDiscord, true);
     const guest = await login("Guest");
     const guestView = (await api("join", { code: joined.data.code }, guest.token)).data;
     assert.equal(guestView.players.find((p) => p.id === result.data.id).discord, true);
@@ -205,10 +208,10 @@ test("static files: folders are not found, malformed URLs are bad requests, the 
   await icon.arrayBuffer();
 });
 
-test("open tables list only unstarted lobbies with public codes and counts", async () => {
+test("open tables list only unstarted lobbies with public host names and counts", async () => {
   const { people, room } = await table("Cloud host", "Cloud guest");
   const listed = (await api("tables")).data.tables.find((t) => t.code === room.code);
-  assert.deepEqual(listed, { code: room.code, players: 2 });
+  assert.deepEqual(listed, { code: room.code, players: 2, hostName: "Cloud host", hostDiscord: false });
   await api("start", { version: room.version }, people[0].token);
   assert.equal((await api("tables")).data.tables.some((t) => t.code === room.code), false);
   const { people: [solo], room: emptySoon } = await table("Leaving cloud");

@@ -191,7 +191,11 @@ export const server = http.createServer(async (req, res) => {
       if (req.method === "GET" && url.pathname === "/api/tables")
         return json(res, 200, { tables: [...rooms.values()]
           .filter((room) => !room.game && room.players.length < Rooms.MAX_SEATS)
-          .map((room) => ({ code: room.code, players: room.players.length })) });
+          .map((room) => {
+            const host = room.players.find((player) => player.id === room.host);
+            return { code: room.code, players: room.players.length,
+              hostName: host.name, hostDiscord: host.discord };
+          }) });
       if (req.method === "POST" && url.pathname === "/api/reset-rooms") {
         if (!guests) return json(res, 403, { error: "Room reset is only available on the playtest server." });
         if (!req.headers["content-type"]?.startsWith("application/json")) return json(res, 415, { error: "Expected JSON." });
