@@ -319,6 +319,41 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     .map((e) => describe(e, ctx));
   const [showResults, setShowResults] = useState(false);
   const [sideHand, setSideHand] = useState(false);
+  const layoutRef = useRef(null);
+  const layoutMotion = useRef({ before: null, animations: [] });
+  const toggleHandLayout = () => {
+    const motion = layoutMotion.current;
+    for (const animation of motion.animations) animation.cancel();
+    motion.animations = [];
+    const layout = layoutRef.current;
+    motion.before = new Map([...layout.querySelectorAll(".row > button, .row-cards, .hand-heading")]
+      .map((element) => [element, element.getBoundingClientRect()]));
+    setSideHand((value) => !value);
+  };
+  useLayoutEffect(() => {
+    const motion = layoutMotion.current;
+    const before = motion.before;
+    motion.before = null;
+    if (!before || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const layout = layoutRef.current;
+    const options = { duration: 230, easing: "cubic-bezier(.2,.7,.2,1)" };
+    for (const [element, oldRect] of before) {
+      if (!layout.contains(element)) continue;
+      const nextRect = element.getBoundingClientRect();
+      const dx = oldRect.left - nextRect.left;
+      const dy = oldRect.top - nextRect.top;
+      if (Math.abs(dx) + Math.abs(dy) < 1) continue;
+      motion.animations.push(element.animate(
+        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], options,
+      ));
+    }
+    const handPanel = layout.querySelector(".hand");
+    motion.animations.push(handPanel.animate(
+      [{ opacity: .55, transform: `translateY(${sideHand ? 8 : -8}px)` }, { opacity: 1, transform: "none" }],
+      options,
+    ));
+    return () => { for (const animation of motion.animations) animation.cancel(); motion.animations = []; };
+  }, [sideHand]);
   const seen = useRef({ id: null, phase: null });
   useEffect(() => {
     const was = seen.current;
@@ -351,7 +386,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     if (!showResults && !spectating) actions.push(html`<${RematchButton} room=${room} act=${act} />`);
   }
   return html`
-    <div class=${`table-layout${sideHand && me ? " side-hand" : ""}`}>
+    <div class=${`table-layout${sideHand && me ? " side-hand" : ""}`} ref=${layoutRef}>
     <div class="board-surface">
     <${Wires} game=${game} mine=${mine} count=${count} selected=${selected} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} />
     ${spectating ? html`<section class="hand spectator-hand"><strong>You are spectating.</strong>${over && html`<${ReturnToTable} room=${room} act=${act} />`}</section>` : html`<section class="hand">
@@ -362,7 +397,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
       ${me
         ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
         : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
-      ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move back down" : "Move to the left"} aria-pressed=${sideHand} onClick=${() => setSideHand((value) => !value)}>
+      ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move back down" : "Move to the left"} aria-pressed=${sideHand} onClick=${toggleHandLayout}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" />${sideHand ? html`<rect x="2" y="2" width="6" height="20" fill="currentColor" />` : html`<rect x="2" y="16" width="20" height="6" fill="currentColor" />`}</svg>
         <span class="hand-layout-tip">${sideHand ? "Move back down" : "Move to the left"}</span>
       </button>`}
