@@ -498,7 +498,7 @@ export function Entrance({ canReset, nameLocked, canClearName, discord, initialN
     return () => { stopped = true; clearTimeout(timer); refreshTables.current = null; };
   }, []);
   return html`<section class="welcome">
-    <h1>Take a seat.<br />Bring your friends.</h1>
+    <h1>A bunch of birds,<br />ready to fly away,<br />catch them in your clouds.</h1>
     <p>1–5 players</p>
     <div class="entry">
       ${discord
