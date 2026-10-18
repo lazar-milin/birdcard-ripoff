@@ -326,7 +326,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     for (const animation of motion.animations) animation.cancel();
     motion.animations = [];
     const layout = layoutRef.current;
-    motion.before = new Map([...layout.querySelectorAll(".row > button, .row-cards, .hand-heading")]
+    motion.before = new Map([...layout.querySelectorAll(".row > button, .row-cards, .hand-heading, .hand-group .card")]
       .map((element) => [element, element.getBoundingClientRect()]));
     setSideHand((value) => !value);
   };
@@ -340,6 +340,18 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     for (const [element, oldRect] of before) {
       if (!layout.contains(element)) continue;
       const nextRect = element.getBoundingClientRect();
+      if (element.matches(".hand-group .card")) {
+        const scaleX = oldRect.width / nextRect.width;
+        const scaleY = oldRect.height / nextRect.height;
+        if (Math.abs(scaleX - 1) + Math.abs(scaleY - 1) < .01) continue;
+        motion.animations.push(element.animate(
+          [
+            { transform: `scale(${scaleX}, ${scaleY})`, transformOrigin: "center center" },
+            { transform: "none", transformOrigin: "center center" },
+          ], options,
+        ));
+        continue;
+      }
       const dx = oldRect.left - nextRect.left;
       const dy = oldRect.top - nextRect.top;
       if (Math.abs(dx) + Math.abs(dy) < 1) continue;
