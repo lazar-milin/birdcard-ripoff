@@ -31,6 +31,7 @@ export function capture() {
       rect: el.getBoundingClientRect(),
       html: el.outerHTML,
       inHand: !!el.closest(".hand-group"),
+      sideHand: !!el.closest(".side-hand"),
     });
 }
 
@@ -70,7 +71,8 @@ export function play(prev, next) {
     const m = moved.get(id);
     const to = el.getBoundingClientRect();
     if (old) {
-      if (Math.abs(old.rect.left - to.left) + Math.abs(old.rect.top - to.top) < 2) continue;
+      if (Math.abs(old.rect.left - to.left) + Math.abs(old.rect.top - to.top) +
+          Math.abs(old.rect.width - to.width) + Math.abs(old.rect.height - to.height) < 2) continue;
       if (m) flyCard(el, old.rect, to, m.step);
       else slide(el, old.rect, to); // only nudged by layout, such as a wire growing
       continue;
@@ -125,11 +127,11 @@ export function play(prev, next) {
 }
 
 // A fixed-position copy of a card, so it can cross clipped containers.
-function ghost(node, inHand, rect) {
+function ghost(node, inHand, rect, sideHand = false) {
   node.removeAttribute("data-card");
   node.style.visibility = "";
   const wrap = document.createElement("div");
-  wrap.className = inHand ? "ghost hand-group" : "ghost";
+  wrap.className = sideHand ? "ghost side-hand" : "ghost";
   wrap.setAttribute("aria-hidden", "true");
   Object.assign(wrap.style, {
     left: rect.left + "px",
@@ -137,7 +139,12 @@ function ghost(node, inHand, rect) {
     width: rect.width + "px",
     height: rect.height + "px",
   });
-  wrap.append(node);
+  if (inHand) {
+    const group = document.createElement("div");
+    group.className = "hand-group";
+    group.append(node);
+    wrap.append(group);
+  } else wrap.append(node);
   document.body.append(wrap);
   return wrap;
 }
@@ -159,14 +166,14 @@ function landOn(el, animation, wrap) {
   animation.finished.then(done, done);
 }
 function flyCard(el, from, to, step) {
-  const wrap = ghost(el.cloneNode(true), !!el.closest(".hand-group"), to);
+  const wrap = ghost(el.cloneNode(true), !!el.closest(".hand-group"), to, !!el.closest(".side-hand"));
   const a = center(from),
     b = center(to);
   const first = `translate(${a.x - b.x}px,${a.y - b.y}px) scale(${from.width / to.width},${from.height / to.height})`;
   landOn(el, animate(wrap, [{ transform: first }, { transform: "none" }], step), wrap);
 }
 function arrive(el, from, to, step) {
-  const wrap = ghost(el.cloneNode(true), !!el.closest(".hand-group"), to);
+  const wrap = ghost(el.cloneNode(true), !!el.closest(".hand-group"), to, !!el.closest(".side-hand"));
   let first = { transform: "scale(.8)", opacity: 0 };
   if (from) {
     const a = center(from),
@@ -178,7 +185,7 @@ function arrive(el, from, to, step) {
 function depart(old, target, step) {
   const holder = document.createElement("div");
   holder.innerHTML = old.html;
-  const wrap = ghost(holder.firstElementChild, old.inHand, old.rect);
+  const wrap = ghost(holder.firstElementChild, old.inHand, old.rect, old.sideHand);
   let last = { transform: "scale(.85)", opacity: 0 };
   if (target) {
     const a = center(old.rect),
@@ -189,8 +196,10 @@ function depart(old, target, step) {
   animate(wrap, [{ transform: "none", opacity: 1 }, last], step).finished.then(done, done);
 }
 function slide(el, from, to) {
+  const a = center(from),
+    b = center(to);
   el.animate(
-    [{ transform: `translate(${from.left - to.left}px,${from.top - to.top}px)` }, { transform: "none" }],
+    [{ transform: `translate(${a.x - b.x}px,${a.y - b.y}px) scale(${from.width / to.width},${from.height / to.height})` }, { transform: "none" }],
     { duration: 300, easing: EASE },
   );
 }
