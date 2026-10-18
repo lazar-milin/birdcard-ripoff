@@ -318,6 +318,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     .filter(isAction)
     .map((e) => describe(e, ctx));
   const [showResults, setShowResults] = useState(false);
+  const [sideHand, setSideHand] = useState(false);
   const seen = useRef({ id: null, phase: null });
   useEffect(() => {
     const was = seen.current;
@@ -350,7 +351,20 @@ export function Table({ room, ctx, selected, onSelect, act }) {
     if (!showResults && !spectating) actions.push(html`<${RematchButton} room=${room} act=${act} />`);
   }
   return html`
+    <div class=${`table-layout${sideHand && me ? " side-hand" : ""}`}>
+    <div class="board-surface">
     <${Wires} game=${game} mine=${mine} count=${count} selected=${selected} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} />
+    ${spectating ? html`<section class="hand spectator-hand"><strong>You are spectating.</strong>${over && html`<${ReturnToTable} room=${room} act=${act} />`}</section>` : html`<section class="hand">
+      <div class="hand-label">
+        <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
+        <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
+        ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move hand below the wires" : "Move hand to the left of the wires"} title=${sideHand ? "Hand below wires" : "Hand beside wires"} aria-pressed=${sideHand} onClick=${() => setSideHand((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h7v18H2zM12 5h10v2H12zM12 11h10v2H12zM12 17h10v2H12z" fill="currentColor" /></svg></button>`}
+      </div>
+      ${me
+        ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
+        : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
+    </section>`}
+    </div>
     <div class="hand-heading">
       ${!over &&
       html`<section class="turn" aria-live="polite">
@@ -366,15 +380,7 @@ export function Table({ room, ctx, selected, onSelect, act }) {
       ${over && html`<section class="game-result" role="status">${headline(game, ctx)}</section>`}
       ${actions.length > 0 && html`<div class="actions">${actions}</div>`}
     </div>
-    ${spectating ? html`<section class="hand spectator-hand"><strong>You are spectating.</strong>${over && html`<${ReturnToTable} room=${room} act=${act} />`}</section>` : html`<section class="hand">
-      <div class="hand-label">
-        <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
-        <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
-      </div>
-      ${me
-        ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
-        : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
-    </section>`}
+    </div>
     <${VictoryDialog} room=${room} ctx=${ctx} open=${over && showResults} onClose=${() => setShowResults(false)} act=${act} spectating=${spectating} />
   `;
 }
