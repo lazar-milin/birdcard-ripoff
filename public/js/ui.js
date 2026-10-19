@@ -62,7 +62,36 @@ const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
 export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onSpectate, onLeave, children }) {
   const g = room?.game;
-  return html`<header class=${room ? `table-header${g ? ` game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}` : ""}>
+  const headerRef = useRef(null);
+  const fitHeader = () => {
+    const header = headerRef.current;
+    if (!header || !room) return;
+    const controls = header.querySelector(".header-controls");
+    const visible = [...controls.children].filter((node) => getComputedStyle(node).display !== "none");
+    const controlStyle = getComputedStyle(controls);
+    const controlsWidth = visible.reduce((sum, node) => {
+      const style = getComputedStyle(node);
+      const label = node.querySelector(".control-label, .help-label");
+      const labelStyle = label && getComputedStyle(label);
+      // Expanded hover labels scroll within the controls row, without moving the title.
+      return sum + node.getBoundingClientRect().width + parseFloat(style.marginLeft) + parseFloat(style.marginRight)
+        - (label ? label.getBoundingClientRect().width + parseFloat(labelStyle.marginLeft) : 0);
+    }, 0) + Math.max(0, visible.length - 1) * parseFloat(controlStyle.columnGap)
+      + parseFloat(controlStyle.paddingLeft) + parseFloat(controlStyle.paddingRight);
+    const brand = header.querySelector(".brand");
+    const style = getComputedStyle(header);
+    const available = header.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    header.classList.toggle("compact-header", brand.scrollWidth + parseFloat(style.columnGap) + controlsWidth > available);
+  };
+  useLayoutEffect(fitHeader);
+  useEffect(() => {
+    if (!room) return;
+    const observer = new ResizeObserver(fitHeader);
+    observer.observe(headerRef.current);
+    document.fonts.ready.then(fitHeader);
+    return () => observer.disconnect();
+  }, [!!room]);
+  return html`<header ref=${headerRef} class=${room ? `table-header${g ? ` game-header${room.players.length >= 3 ? " crowded-header" : ""}` : ""}` : ""}>
     <div class="header-left">
       <b class="brand">BirdCard Rip-off</b>
     </div>

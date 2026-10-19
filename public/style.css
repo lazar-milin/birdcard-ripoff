@@ -291,3 +291,18 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
   .side-hand .hand-group .breakpoints{font-size:11px;line-height:11px}
   .side-hand .hand-group .art{width:68px;height:68px}
 }
+
+/* Keep the title beside full-size controls until their collapsed widths no longer fit. */
+.table-header{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:start;column-gap:10px;height:auto;min-height:64px}
+.table-header .header-left{display:flex;min-width:0;align-items:flex-start;flex-basis:auto}
+.table-header .brand{white-space:nowrap}
+.table-header .header-controls,.crowded-header .header-controls{position:static;grid-column:2;width:100%;max-width:100%;margin:0;justify-content:safe flex-end;gap:8px;padding:0 2px 6px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap}
+.table-header.compact-header{grid-template-columns:minmax(0,1fr);row-gap:8px}
+.table-header.compact-header .header-left,.table-header.compact-header .header-controls{grid-column:1}
+.table-header .header-controls>button{flex-shrink:0}
+.table-header #copy{font-size:12px;min-height:47px;padding:7px 12px;white-space:nowrap;flex-shrink:0}
+.table-header #copy small{font-size:10px}
+.table-header #sound-toggle{height:47px}
+.table-header #help,.table-header .expand-control{min-width:47px;height:47px;padding:10px}
+.table-header #log-toggle{font-size:12px}
+@media(max-width:650px){.table-header .brand{font-size:17px}.game-header .brand{font-size:13px}}
