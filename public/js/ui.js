@@ -60,6 +60,33 @@ const BotIcon = html`<svg class="bot-icon" viewBox="0 0 20 20" role="img" aria-l
 const BinocularsIcon = html`<svg class="binoculars-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 2h5v3H4zm11 0h5v3h-5zM3 5h7v8H3zm11 0h7v8h-7zM10 8h4v6h-4zM3 13h7v2h1v5H9v2H3v-2H1v-5h2zm11 0h7v2h2v5h-2v2h-6v-2h-2v-5h1z" fill="currentColor"/><path d="M4 15h5v5H4zm11 0h5v5h-5z" fill="#b7d6e3"/><path d="M5 16h2v2H5zm11 0h2v2h-2z" fill="#eaf5f8"/></svg>`;
 const timerLabel = (seconds) => seconds === 30 ? "30 seconds" : "1 minute";
 
+function TimerStatus({ room }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!room.deadline) return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const interval = setInterval(tick, 500);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [room.deadline]);
+
+  const running = room.game && room.game.phase !== "over";
+  const remaining = running && room.deadline
+    ? Math.max(0, Math.ceil((room.deadline - now) / 1000))
+    : null;
+  const label = remaining !== null
+    ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`
+    : running ? "Paused" : timerLabel(room.timer);
+  return html`<span id="timer-status" class=${remaining !== null && remaining <= 10 ? "urgent" : ""}
+    role="timer" aria-label=${`Turn timer: ${remaining !== null ? `${label} remaining` : label}`}>
+    ${ClockIcon}<small>${label}</small>
+  </span>`;
+}
+
 export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleScoreboard, deckOpen, onToggleDeck, timerOpen, onToggleTimer, muted = true, onToggleSound, onCopy, onSpectate, onLeave, children }) {
   const g = room?.game;
   const headerRef = useRef(null);
@@ -99,7 +126,7 @@ export function Header({ room, logOpen, onToggleLog, scoreboardOpen, onToggleSco
       <button id="sound-toggle" aria-label=${muted ? "Unmute sounds" : "Mute sounds"} title=${muted ? "Unmute sounds" : "Mute sounds"} aria-pressed=${!muted} onClick=${onToggleSound}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l11-2v12M9 9l11-2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h6v5H3zm11-2h6v5h-6z" fill="currentColor"/>${muted && html`<path d="M3 3l18 18" stroke="#ba4949" stroke-width="3" />`}</svg>
       </button>
-      ${room && room.timer > 0 && html`<span id="timer-status" role="img" aria-label=${`Turn timer: ${timerLabel(room.timer)}`}>${ClockIcon}<small>${timerLabel(room.timer)}</small></span>`}
+      ${room && room.timer > 0 && html`<${TimerStatus} room=${room} />`}
       ${room && html`<button id="copy" onClick=${onCopy}><span>Table ${room.code}</span><small>${g ? "Round " + g.round : "Lobby"} · Copy code</small></button>`}
       ${room && !g && room.you !== room.host && room.players.some((p) => p.id === room.you) && html`<button id="spectate-table" class="expand-control" aria-label="Spectate table" onClick=${onSpectate}>${BinocularsIcon}<span class="control-label">Spectate table</span></button>`}
       ${room && room.you === room.host && html`<button id="timer-toggle" class="expand-control" aria-label="Turn timer settings" aria-expanded=${timerOpen} aria-controls="timer-panel" onClick=${onToggleTimer}>${ClockIcon}<span class="control-label">Turn timer</span></button>`}
