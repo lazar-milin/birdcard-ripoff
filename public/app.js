@@ -35,6 +35,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [logOpen, setLogOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
+  const [cloudsRight, setCloudsRight] = useState(false);
   const [deckOpen, setDeckOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -342,11 +343,12 @@ function App() {
         onClearName=${clearGuestName}
         onReset=${() => setResetOpen(true)}
       />`}
-      ${inRoom && html`<${Scoreboard} room=${room} onKick=${(playerId) => act("kick", { playerId })} onRemoveBot=${(botId) => act("bot", { remove: true, botId })} />`}
-      ${inRoom &&
-      (room.game
-        ? html`<${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />`
-        : html`<${Lobby} room=${room} act=${act} />`)}
+      ${inRoom && (room.game
+        ? html`<div class=${`game-layout${cloudsRight ? " clouds-right" : ""}`}>
+          <${Scoreboard} room=${room} onKick=${(playerId) => act("kick", { playerId })} cloudsRight=${cloudsRight} onToggleClouds=${() => setCloudsRight((value) => !value)} />
+          <${Table} room=${room} ctx=${ctx} selected=${selected} onSelect=${setSelected} act=${act} />
+        </div>`
+        : html`<${Scoreboard} room=${room} onRemoveBot=${(botId) => act("bot", { remove: true, botId })} /><${Lobby} room=${room} act=${act} />`)}
     </main>
     ${sixSeven && html`<div id="six-seven-celebration" role="status" aria-live="assertive" aria-atomic="true" key=${sixSeven.key}>
       <img src=${PENGUIN_SEQUENCE[penguinFrame][0]} alt="" />
