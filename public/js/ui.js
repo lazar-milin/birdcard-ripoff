@@ -171,7 +171,7 @@ export function DeckPanel({ game, onClose }) {
 export function Scoreboard({ room, onKick, onRemoveBot, cloudsRight = false, onToggleClouds }) {
   const g = room.game;
   return html`<div class=${`scoreboard${g ? " game-scoreboard" : ""}${g && room.players.length >= 3 ? " crowded-scoreboard" : ""}`}>
-    <div class="players">
+    <div class=${`players player-count-${room.players.length}`}>
       ${room.players.map((p) => {
         const gp = g?.players.find((x) => x.id === p.id);
         const speciesCount = new Set((gp?.collection ?? []).map(speciesOf)).size;
@@ -194,11 +194,11 @@ export function Scoreboard({ room, onKick, onRemoveBot, cloudsRight = false, onT
           <${Chips} player=${p.id} collection=${gp?.collection ?? []} showMissing=${true} />
         </section>`;
       })}
-    </div>
     ${g && html`<button id="cloud-layout-toggle" type="button" aria-label=${cloudsRight ? "Move back up" : "Move to the right"} aria-pressed=${cloudsRight} onClick=${onToggleClouds}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" />${cloudsRight ? html`<rect x="16" y="2" width="6" height="20" fill="currentColor" />` : html`<rect x="2" y="2" width="20" height="6" fill="currentColor" />`}</svg>
       <span class="cloud-layout-tip">${cloudsRight ? "Move back up" : "Move to the right"}</span>
     </button>`}
+    </div>
   </div>`;
 }
 
