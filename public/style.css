@@ -329,8 +329,8 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 @media(min-width:1100px){
   .game-layout{display:contents}
   .game-layout .game-scoreboard{position:relative}
-  .game-layout .game-scoreboard .players{display:flex;flex-wrap:nowrap;align-items:stretch;gap:8px}
-  .game-layout .game-scoreboard .player-count-4,.game-layout .game-scoreboard .player-count-5{justify-content:space-between}
+  .game-layout .game-scoreboard .players{display:flex;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:8px}
+  .game-layout:not(.clouds-right) .game-scoreboard .players{flex:0 1 1080px;max-width:1080px;margin-left:auto;margin-right:auto}
   .game-layout .game-scoreboard .player{flex:1 1 0;width:auto;height:auto;max-width:310px;min-width:0;min-height:120px}
   .game-layout .game-scoreboard .player-count-4 .player{max-width:270px}
   .game-layout .game-scoreboard .player-count-5 .player{max-width:230px}
