@@ -274,8 +274,9 @@ function fitWire(row) {
   if (zoom < 1) wire.style.zoom = zoom.toFixed(3);
 }
 
-function Wires({ game, mine, count, selected, onLay }) {
+function Wires({ game, mine, count, selected, draggedBird, onLay, onDropBird }) {
   const playing = mine && game.phase === "lay";
+  const bird = draggedBird ?? selected;
   const [target, setTarget] = useState(null);
   const rowsRef = useRef(null);
   // Runs before card animations measure positions, so cards fly to their squeezed spots.
@@ -293,14 +294,18 @@ function Wires({ game, mine, count, selected, onLay }) {
   if (playing && count && target) {
     const row = [...game.rows[target.row]];
     if (target.side === "right") row.reverse();
-    const match = row.findIndex((card) => speciesOf(card) === selected);
+    const match = row.findIndex((card) => speciesOf(card) === bird);
     if (match > 0) row.slice(0, match).forEach((card) => captured.add(card));
   }
   const end = (i, side) => html`<button
     data-row=${i}
     data-side=${side}
+    class=${draggedBird && target?.row === i && target.side === side ? "drag-hover" : ""}
     aria-label=${`Place ${side} of row ${i + 1}`}
-    disabled=${!playing || !count}
+    disabled=${!playing || (!count && !draggedBird)}
+    onDragOver=${(event) => { if (playing && draggedBird) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setTarget((current) => current?.row === i && current.side === side ? current : { row: i, side }); } }}
+    onDrop=${(event) => { if (playing && draggedBird) { event.preventDefault(); document.body.classList.remove("dragging-bird"); setTarget(null); onDropBird(draggedBird, i, side); } }}
+    onDragLeave=${() => setTarget(null)}
     onMouseEnter=${() => setTarget({ row: i, side })}
     onMouseLeave=${() => setTarget(null)}
     onFocus=${() => setTarget({ row: i, side })}
@@ -318,7 +323,7 @@ function Wires({ game, mine, count, selected, onLay }) {
   </div>`;
 }
 
-function Hand({ hand, selected, fresh, onSelect }) {
+function Hand({ hand, selected, draggedBird, fresh, onSelect, canDrag, onDragBird, onDragEndBird }) {
   const groups = SPECIES.map((s) => ({ s, cards: hand.filter((c) => speciesOf(c) === s.id) })).filter(
     (g) => g.cards.length,
   );
@@ -328,8 +333,11 @@ function Hand({ hand, selected, fresh, onSelect }) {
       const fresh_ = cards.filter((c) => fresh.has(c)).length;
       return html`<button
         key=${s.id}
-        class=${selected === s.id ? "hand-group group-selected" : "hand-group"}
+        class=${selected === s.id || draggedBird === s.id ? "hand-group group-selected" : "hand-group"}
         data-bird=${s.id}
+        draggable=${canDrag}
+        onDragStart=${(event) => { if (canDrag) { const group = event.currentTarget, rect = group.getBoundingClientRect(); group.classList.add("group-selected"); document.body.classList.add("dragging-bird"); event.dataTransfer.setData("text/plain", s.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setDragImage(group, event.clientX - rect.left, event.clientY - rect.top); onDragBird(s.id); } }}
+        onDragEnd=${(event) => { document.body.classList.remove("dragging-bird"); if (selected !== s.id) event.currentTarget.classList.remove("group-selected"); onDragEndBird(); }}
         aria-pressed=${selected === s.id}
         aria-label=${`Select ${cards.length} ${s.name} ${cards.length === 1 ? "card" : "cards"}${fresh_ ? `, ${fresh_} new` : ""}`}
         onClick=${() => onSelect(s.id)}
@@ -360,6 +368,7 @@ const PROMPTS = {
 };
 
 export function Table({ room, ctx, selected, onSelect, act }) {
+  const [draggedBird, setDraggedBird] = useState(null);
   const game = room.game;
   const you = room.you;
   const spectating = room.spectators.some((p) => p.id === you);
@@ -460,14 +469,14 @@ export function Table({ room, ctx, selected, onSelect, act }) {
   return html`
     <div class=${`table-layout${sideHand && me ? " side-hand" : ""}`} ref=${layoutRef}>
     <div class="board-surface">
-    <${Wires} game=${game} mine=${mine} count=${count} selected=${selected} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} />
+    <${Wires} game=${game} mine=${mine} count=${draggedBird ? hand.filter((c) => speciesOf(c) === draggedBird).length : count} selected=${selected} draggedBird=${draggedBird} onLay=${(row, side) => act("move", { type: "lay", bird: selected, row, side })} onDropBird=${(bird, row, side) => { setDraggedBird(null); act("move", { type: "lay", bird, row, side }); }} />
     ${spectating ? html`<section class="hand spectator-hand"><strong>You are spectating.</strong>${over && html`<${ReturnToTable} room=${room} act=${act} />`}</section>` : html`<section class="hand">
       <div class="hand-label">
         <h2>${me ? html`Your hand <small>(${hand.length})</small>` : "You have a seat"}</h2>
         <p class="eyebrow">${me ? "ONLY YOU CAN SEE THESE" : "NEXT GAME"}</p>
       </div>
       ${me
-        ? html`<${Hand} hand=${hand} selected=${selected} fresh=${fresh} onSelect=${onSelect} />`
+        ? html`<${Hand} hand=${hand} selected=${selected} draggedBird=${draggedBird} fresh=${fresh} onSelect=${onSelect} canDrag=${mine && game.phase === "lay"} onDragBird=${setDraggedBird} onDragEndBird=${() => setDraggedBird(null)} />`
         : html`<p class="seat-note">You joined after this game ended. You'll be dealt in when the host starts the next one.</p>`}
       ${me && html`<button id="hand-layout-toggle" type="button" aria-label=${sideHand ? "Move back down" : "Move to the left"} aria-pressed=${sideHand} onClick=${toggleHandLayout}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" />${sideHand ? html`<rect x="2" y="2" width="6" height="20" fill="currentColor" />` : html`<rect x="2" y="16" width="20" height="6" fill="currentColor" />`}</svg>

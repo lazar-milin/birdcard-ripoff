@@ -74,6 +74,9 @@ header{z-index:3}.header-left{display:flex;align-items:center;gap:16px;flex-wrap
 /* Capture preview and hand toolbar: decoration never changes card geometry. */
 .row>button{width:34px;height:34px;flex-basis:34px;padding:5px}
 .card.capture-preview::after{content:'';position:absolute;inset:2px;border:2px dashed #427866;border-radius:inherit;pointer-events:none;z-index:4;background:#c6e7bd26}
+.hand-group[draggable="true"]{cursor:grab}
+.dragging-bird,.dragging-bird *{cursor:grabbing!important}
+.rows.my-turn .row>button:not(:disabled):hover,.rows.my-turn .row>button.drag-hover{background:#d8efcf;box-shadow:0 0 0 3px #81c88d,0 0 12px 4px #6ebc7c99}
 .hand-heading{align-items:flex-start;flex-direction:column;gap:10px;margin-top:16px;margin-bottom:12px}
 .hand-heading .actions{justify-content:flex-start}
 #pass{background:#eee1c5;border-color:#aa9472;color:#69563b}
